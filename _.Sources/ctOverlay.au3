@@ -5,7 +5,7 @@
 #AutoIt3Wrapper_UseUpx=n
 #AutoIt3Wrapper_Res_Description=Corsica Overlay
 #AutoIt3Wrapper_Res_ProductName=
-#AutoIt3Wrapper_Res_Fileversion=1.2408.1410.2836
+#AutoIt3Wrapper_Res_Fileversion=1.2408.1410.3431
 #AutoIt3Wrapper_Res_Fileversion_AutoIncrement=y
 #AutoIt3Wrapper_Res_Fileversion_First_Increment=y
 #AutoIt3Wrapper_Run_After=echo %fileversion%>..\VERSION.rc
@@ -43,7 +43,7 @@ Opt("TrayIconHide", 1)
 Opt("GUIOnEventMode",1)
 
 Global Const $sAlias="ctOverlay"
-Global Const $VERSION = "1.2408.1410.2836"
+Global Const $VERSION = "1.2408.1410.3431"
 Global $sTitle=$sAlias&" v"&$VERSION
 
 
@@ -71,6 +71,8 @@ Global $aMenu[0]
 Local $iLeftLast,$iTopLast
 ; Init GDI
 Global $hSelfLib, $hGraphics, $hBitmap, $hContext, $hHBitmap, $hBrushBl, $hBrushGr, $hBrushRd, $hBrushBk, $hIcon
+Global $sAppDir=@LocalAppDataDir&"\InfinitySys\cwOverlay.log"
+Global $sLog=$sAppDir&"\cwOverlay.log"
 
 _WinAPI_SetProcessDpiAwarenessContext($DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2)
 Global $iDpiScale=1.5
@@ -92,8 +94,6 @@ _gfxDispose()
 _GDIPlus_Shutdown()
 GUIDelete($hGUI)
 
-$sAppDir=@LocalAppDataDir&"\InfinitySys\cwOverlay.log"
-$sLog=$sAppDir&"\cwOverlay.log"
 
 Func _Log($sLine)
     If Not FileExists($sAppDir) Then DirCreate($sAppDir)
