@@ -5,7 +5,7 @@
 #AutoIt3Wrapper_UseUpx=n
 #AutoIt3Wrapper_Res_Description=Corsica Overlay
 #AutoIt3Wrapper_Res_ProductName=
-#AutoIt3Wrapper_Res_Fileversion=1.2408.912.5623
+#AutoIt3Wrapper_Res_Fileversion=1.2408.1410.2836
 #AutoIt3Wrapper_Res_Fileversion_AutoIncrement=y
 #AutoIt3Wrapper_Res_Fileversion_First_Increment=y
 #AutoIt3Wrapper_Run_After=echo %fileversion%>..\VERSION.rc
@@ -43,7 +43,7 @@ Opt("TrayIconHide", 1)
 Opt("GUIOnEventMode",1)
 
 Global Const $sAlias="ctOverlay"
-Global Const $VERSION = "1.2408.912.5623"
+Global Const $VERSION = "1.2408.1410.2836"
 Global $sTitle=$sAlias&" v"&$VERSION
 
 
@@ -92,6 +92,15 @@ _gfxDispose()
 _GDIPlus_Shutdown()
 GUIDelete($hGUI)
 
+$sAppDir=@LocalAppDataDir&"\InfinitySys\cwOverlay.log"
+$sLog=$sAppDir&"\cwOverlay.log"
+
+Func _Log($sLine)
+    If Not FileExists($sAppDir) Then DirCreate($sAppDir)
+    If FileGetSize($sLog)>1024*1024 Then FileDelete($sLog)
+    FileWriteLine($sLog,$sLine)
+EndFunc
+
 Func _gfxRecalc()
     $iMargin=2*$iDpi
     $iSizeIco=16*$iDpi
@@ -138,7 +147,10 @@ Func _gfxDispose()
 EndFunc
 
 Func _gfxDraw()
+    ;$hTimer=TimerInit()
+    ;$hTimerA=TimerInit()
     $hBitmapIcon=_GDIPlus_ImageResize($hIcon,$iSizeIco*$iDpiNoScale,$iSizeIco*$iDpiNoScale)
+    ;ConsoleWrite(TimerDiff($hTimerA)&@CRLF)
     $hBitmap=_GDIPlus_BitmapCreateFromGraphics($iWidth, $iHeight, $hGraphics)
     $hContextIcon=_GDIPlus_ImageGetGraphicsContext($hBitmapIcon)
     $hContext=_GDIPlus_ImageGetGraphicsContext($hBitmap)
@@ -156,9 +168,10 @@ Func _gfxDraw()
     _GDIPlus_GraphicsDrawImage($hContext, $hBitmapIcon, $iMargin, $iMargin);-($iMargin/4), $iMargin-($iMargin/4))
  ;   _GDIPlus_GraphicsFillEllipse($hContext, $iMargin, $iMargin, $iSizeIco, $iSizeIco, $hBrushRd);$hBrushBl)
     ;_GDIPlus_GraphicsDrawRect($hContext,$iMargin,$iMargin,$iWidth,$iHeight)
-    ConsoleWrite((Mod($iIcoHeight,2)==0)&','&$iIcoHeight&','&$iDpiNoScale&','&$iMargin&','&$iSizeIco&@CRLF)
+    ;ConsoleWrite((Mod($iIcoHeight,2)==0)&','&$iIcoHeight&','&$iDpiNoScale&','&$iMargin&','&$iSizeIco&@CRLF)
     Local $hHBitmap=_GDIPlus_BitmapCreateHBITMAPFromBitmap($hBitmap)
     _WinAPI_UpdateLayeredWindowEx($hGUI, -1, -1, $hHBitmap,0xBB)
+    ;ConsoleWrite(TimerDiff($hTimer)&@CRLF)
 EndFunc
 
 Func _gfxReload()
@@ -168,7 +181,7 @@ EndFunc
 
 Func initUI()
 	_GDIPlus_Startup() ;initialize GDI+
-	$hGUI = GUICreate("", $iWidth, $iHeight, $iLeft, $iTop, $WS_POPUP, $WS_EX_TOPMOST+$WS_EX_NOACTIVATE+$WS_EX_LAYERED)
+	$hGUI = GUICreate("", $iWidth, $iHeight, $iLeft, $iTop, $WS_POPUP, $WS_EX_TOPMOST+$WS_EX_NOACTIVATE+$WS_EX_LAYERED+$WS_EX_TOOLWINDOW)
     _gfxInit()
     _gfxDraw()
     $idDummyMenu = GUICtrlCreateDummy()
@@ -179,7 +192,7 @@ Func initUI()
     GUIRegisterMsg($WM_SYSCOMMAND, "WM_SYSCOMMAND")
     GUIRegisterMsg($WM_MOUSEACTIVATE, 'WM_EVENTS')
     GUIRegisterMsg($WM_DISPLAYCHANGE, "onDisplayChange")
-    AdlibRegister("_watchDisplay",250)
+    ;AdlibRegister("_watchDisplay",250)
     AdlibRegister('posTrack',64)
 	GUISetState(@SW_SHOWNOACTIVATE, $hGUI)
 EndFunc   ;==>Example
@@ -611,6 +624,7 @@ Func posTrack()
         $aMousePos[1]=$aMousePos[0]
         $aMousePos[3]=$aMousePos[2]
         Local $hMon=_WinAPI_MonitorFromPoint($tPos)
+        If @error Then return
         For $i=1 To UBound($aDisplays,1)-1
             If $aDisplays[$i][0]==$hMon Then
                 $iMon=$i
@@ -626,11 +640,19 @@ Func posTrack()
         $iLeft=$aDisplays[$iMon][1]+$aDisplays[$iMon][3]-$iRight
         $iTop=$aDisplays[$iMon][2]+$iTop
         If $iLeft<>$iLeftLast Or $iTop<>$iTopLast Then
+            If _isWindowsLocked() Then Return
             $iLeftLast=$iLeft
             $iTopLast=$iTop
+            ;GUISetState(@SW_HIDE, $hGUI)
             _gfxRecalc()
-            _watchDisplay()
             _gfxReload()
+            $aPos=WinGetPos($hGui)
+            If $aPos[0]<>$iLeft Or $aPos[1]<>$iTop Then
+                WinMove($hGui,"",$iLeft,$iTop)
+                _Log($iLeft&'x'&$iTop)
+                _WinAPI_SetProcessDpiAwarenessContext($DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2)
+            EndIf
+            GUISetState(@SW_SHOWNOACTIVATE, $hGui)
         EndIf
     EndIf
 EndFunc
@@ -669,14 +691,6 @@ Func _WinAPI_GetDpiForMonitor($hMonitor, $dpiType)
 EndFunc
 
 Func _watchDisplay()
-    If _isWindowsLocked() Then Return
-
-    $aPos=WinGetPos($hGui)
-    If $aPos[0]<>$iLeft Or $aPos[1]<>$iTop Then
-        WinMove($hGui,"",$iLeft,$iTop)
-        _WinAPI_SetProcessDpiAwarenessContext($DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2)
-    EndIf
-    GUISetState(@SW_SHOWNOACTIVATE, $hGui)
 EndFunc
 
 Func _ctxEvent()
