@@ -4,7 +4,7 @@
 #AutoIt3Wrapper_UseUpx=n
 #AutoIt3Wrapper_Res_Description=Corsica Overlay
 #AutoIt3Wrapper_Res_ProductName=
-#AutoIt3Wrapper_Res_Fileversion=1.2408.1410.3431
+#AutoIt3Wrapper_Res_Fileversion=1.2408.1415.3853
 #AutoIt3Wrapper_Res_Fileversion_AutoIncrement=y
 #AutoIt3Wrapper_Res_Fileversion_First_Increment=y
 #AutoIt3Wrapper_Run_After=echo %fileversion%>..\VERSION.rc
@@ -19397,7 +19397,7 @@ Opt("TrayAutoPause", 0)
 Opt("TrayIconHide", 1)
 Opt("GUIOnEventMode",1)
 Global Const $sAlias="ctOverlay"
-Global Const $VERSION = "1.2408.1410.3431"
+Global Const $VERSION = "1.2408.1415.3853"
 Global $sTitle=$sAlias&" v"&$VERSION
 Global Const $MA_NOACTIVATE = 3
 Global Const $MA_NOACTIVATEANDEAT = 4
@@ -19415,7 +19415,7 @@ Global $aDisplays, $aMousePos[4], $aMon[4]
 Global $aPins[0][2]
 Global $aMenu[0]
 Local $iLeftLast,$iTopLast
-Global $hSelfLib, $hGraphics, $hBitmap, $hContext, $hHBitmap, $hBrushBl, $hBrushGr, $hBrushRd, $hBrushBk, $hIcon
+Global $hSelfLib, $hGraphics, $hBitmap, $hContext, $hHBitmap, $hBrushBl, $hBrushGr, $hBrushRd, $hBrushBk, $hIcon, $hHBitmap
 Global $sAppDir=@LocalAppDataDir&"\InfinitySys\cwOverlay.log"
 Global $sLog=$sAppDir&"\cwOverlay.log"
 _WinAPI_SetProcessDpiAwarenessContext($DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2)
@@ -19439,6 +19439,7 @@ Func _Log($sLine)
 If Not FileExists($sAppDir) Then DirCreate($sAppDir)
 If FileGetSize($sLog)>1024*1024 Then FileDelete($sLog)
 FileWriteLine($sLog,$sLine)
+ConsoleWrite($sLine&@CRLF)
 EndFunc
 Func _gfxRecalc()
 $iMargin=2*$iDpi
@@ -19481,26 +19482,28 @@ _GDIPlus_GraphicsDispose($hContext)
 _GDIPlus_BitmapDispose($hBitmap)
 EndFunc
 Func _gfxDraw()
-$hBitmapIcon=_GDIPlus_ImageResize($hIcon,$iSizeIco*$iDpiNoScale,$iSizeIco*$iDpiNoScale)
+$hBitmapIcon=_GDIPlus_ImageResize($hIcon,$iSizeIco*$iDpiScale,$iSizeIco*$iDpiScale)
 $hBitmap=_GDIPlus_BitmapCreateFromGraphics($iWidth, $iHeight, $hGraphics)
 $hContextIcon=_GDIPlus_ImageGetGraphicsContext($hBitmapIcon)
 $hContext=_GDIPlus_ImageGetGraphicsContext($hBitmap)
+_GDIPlus_GraphicsSetPixelOffsetMode($hContext,$GDIP_PIXELOFFSETMODE_HIGHQUALITY)
 _GDIPlus_GraphicsSetSmoothingMode($hContext,$GDIP_SMOOTHINGMODE_HIGHQUALITY)
 _GDIPlus_GraphicsSetCompositingQuality($hContext,$GDIP_COMPOSITINGQUALITY_HIGHQUALITY)
 _GDIPlus_GraphicsSetInterpolationMode($hContext,$GDIP_INTERPOLATIONMODE_HIGHQUALITYBICUBIC)
 _GDIPlus_GraphicsSetSmoothingMode($hGraphics,$GDIP_SMOOTHINGMODE_HIGHQUALITY)
 _GDIPlus_GraphicsSetCompositingQuality($hGraphics,$GDIP_COMPOSITINGQUALITY_HIGHQUALITY)
 _GDIPlus_GraphicsSetInterpolationMode($hGraphics,$GDIP_INTERPOLATIONMODE_HIGHQUALITYBICUBIC)
+_GDIPlus_GraphicsSetPixelOffsetMode($hGraphics,$GDIP_PIXELOFFSETMODE_HIGHQUALITY)
 _GDIPlus_GraphicsFillEllipse($hContext, 0, 0, $iMargin+$iSizeIco+$iMargin, $iMargin+$iSizeIco+$iMargin, $hBrushBk)
 _GDIPlus_GraphicsFillRect($hContext, $iMargin+($iSizeIco/2), 0, $iWidth-$iMargin-($iSizeIco/2), $iMargin+$iSizeIco+$iMargin, $hBrushBk)
 $iIcoHeight=_GDIPlus_ImageGetHeight($hBitmapIcon)
 _GDIPlus_GraphicsDrawImage($hContext, $hBitmapIcon, $iMargin, $iMargin)
-Local $hHBitmap=_GDIPlus_BitmapCreateHBITMAPFromBitmap($hBitmap)
-_WinAPI_UpdateLayeredWindowEx($hGUI, -1, -1, $hHBitmap,0xBB)
+$hHBitmap=_GDIPlus_BitmapCreateHBITMAPFromBitmap($hBitmap)
 EndFunc
 Func _gfxReload()
 _gfxDispose()
 _gfxDraw()
+_WinAPI_UpdateLayeredWindowEx($hGUI, -1, -1, $hHBitmap,0xBB)
 EndFunc
 Func initUI()
 _GDIPlus_Startup()
@@ -19865,14 +19868,6 @@ $aDisplays[$i][13]=$aInfo[2]
 $aDisplays[$i][14]=$aInfo[3]
 EndIf
 $aDPI = _WinAPI_GetDpiForMonitor($aDisplays[$i][0], 0)
-$aDPIa = _WinAPI_GetDpiForMonitor($aDisplays[$i][0], 0)
-$aDPIb = _WinAPI_GetDpiForMonitor($aDisplays[$i][0], 1)
-$aDPIc = _WinAPI_GetDpiForMonitor($aDisplays[$i][0], 2)
-$aDPId = _WinAPI_GetDpiForMonitor($aDisplays[$i][0], 3)
-ConsoleWrite($i&'.A:'&$aDPIa[0]&','&$aDPIa[1]&@CRLF)
-ConsoleWrite($i&'.B:'&$aDPIb[0]&','&$aDPIb[1]&@CRLF)
-ConsoleWrite($i&'.C:'&$aDPIc[0]&','&$aDPIc[1]&@CRLF)
-ConsoleWrite($i&'.D:'&$aDPId[0]&','&$aDPId[1]&@CRLF)
 If IsArray($aDPI) Then
 $aDisplays[$i][15]=$aDPI[0]
 $aDisplays[$i][16]=$aDPI[1]
@@ -19898,6 +19893,7 @@ ExitLoop
 EndIf
 Next
 If $iMon=-1 Then Return SetError(1,0,False)
+_gfxRecalc()
 $iRight=$iWidth
 $iTop=18*$iDpi
 $iLeft=$aDisplays[$iMon][1]+$aDisplays[$iMon][3]-$iRight
@@ -19906,12 +19902,11 @@ If $iLeft<>$iLeftLast Or $iTop<>$iTopLast Then
 If _isWindowsLocked() Then Return
 $iLeftLast=$iLeft
 $iTopLast=$iTop
-_gfxRecalc()
-_gfxReload()
 $aPos=WinGetPos($hGui)
 If $aPos[0]<>$iLeft Or $aPos[1]<>$iTop Then
+GUISetState(@SW_HIDE, $hGui)
+_gfxReload()
 WinMove($hGui,"",$iLeft,$iTop)
-_Log($iLeft&'x'&$iTop)
 _WinAPI_SetProcessDpiAwarenessContext($DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2)
 EndIf
 GUISetState(@SW_SHOWNOACTIVATE, $hGui)
