@@ -5,7 +5,7 @@
 #AutoIt3Wrapper_UseUpx=n
 #AutoIt3Wrapper_Res_Description=Corsica Overlay
 #AutoIt3Wrapper_Res_ProductName=
-#AutoIt3Wrapper_Res_Fileversion=1.2408.1415.3853
+#AutoIt3Wrapper_Res_Fileversion=1.2408.1611.3820
 #AutoIt3Wrapper_Res_Fileversion_AutoIncrement=y
 #AutoIt3Wrapper_Res_Fileversion_First_Increment=y
 #AutoIt3Wrapper_Run_After=echo %fileversion%>..\VERSION.rc
@@ -43,7 +43,7 @@ Opt("TrayIconHide", 1)
 Opt("GUIOnEventMode",1)
 
 Global Const $sAlias="ctOverlay"
-Global Const $VERSION = "1.2408.1415.3853"
+Global Const $VERSION = "1.2408.1611.3820"
 Global $sTitle=$sAlias&" v"&$VERSION
 
 
@@ -60,7 +60,7 @@ Global $gsConfig=$g_sDataDir&"\ctOverlay.ini"
 ;Global $gidCtxClipPing, $gidCtxClipResolve, $gidCtxClipRemote, $gidCtxClipMgmt, $gidCtxClipCmd, $gidCtxClipActions, $gidCtxClipFixFw, $gidCtxClipExplore, $gidCtxClipReg, $gidClipMenuPin, $gidClipMenuUnpin
 Global $gCtxMain
 Global $gidClipMenuPin, $gidClipSendMacro, $gidClipSendRaw, $gidCtxDismiss, $gidCtxExit, $aClipAct, $gidClipMenuUnpin, $gidCtxClipActions
-Global $gidMainSepA, $gidMainSepB, $idClipMenuSep, $gidClipMenu, $gidClipSend, $gidClip, $gidClipMenuSep
+Global $gidMainSepA, $gidMainSepB, $idClipMenuSep, $gidClipMenu, $gidClipSend, $gidClipCall, $gidClip, $gidClipMenuSep
 Global $gidClipUrl
 Global $gidClipTikToClip, $gidClipTikOpen
 Global $sClipAct, $gsTooltip, $ghToolTip, $ghCtxMain
@@ -150,7 +150,7 @@ EndFunc
 Func _gfxDraw()
     ;$hTimer=TimerInit()
     ;$hTimerA=TimerInit()
-    $hBitmapIcon=_GDIPlus_ImageResize($hIcon,$iSizeIco*$iDpiScale,$iSizeIco*$iDpiScale)
+    $hBitmapIcon=_GDIPlus_ImageResize($hIcon,$iSizeIco*$iDpiNoScale,$iSizeIco*$iDpiNoScale)
     ;ConsoleWrite(TimerDiff($hTimerA)&@CRLF)
     $hBitmap=_GDIPlus_BitmapCreateFromGraphics($iWidth, $iHeight, $hGraphics)
     $hContextIcon=_GDIPlus_ImageGetGraphicsContext($hBitmapIcon)
@@ -166,6 +166,12 @@ Func _gfxDraw()
     _GDIPlus_GraphicsFillEllipse($hContext, 0, 0, $iMargin+$iSizeIco+$iMargin, $iMargin+$iSizeIco+$iMargin, $hBrushBk);$hBrushRd)
 	_GDIPlus_GraphicsFillRect($hContext, $iMargin+($iSizeIco/2), 0, $iWidth-$iMargin-($iSizeIco/2), $iMargin+$iSizeIco+$iMargin, $hBrushBk);$hBrushGr)
     $iIcoHeight=_GDIPlus_ImageGetHeight($hBitmapIcon)
+    _Log($iIcoHeight)
+    _Log($iSizeIco)
+    _Log($iDpiNoScale)
+    _Log($iDpi)
+    _Log($iDpiScale)
+    _Log('')
  ;   _GDIPlus_GraphicsDrawRect($hContextIcon,0,0,$iIcoHeight-1,$iIcoHeight-1)
  ;   _GDIPlus_GraphicsDrawRect($hContext,0,0,$iWidth-1,$iHeight-1)
     _GDIPlus_GraphicsDrawImage($hContext, $hBitmapIcon, $iMargin, $iMargin);-($iMargin/4), $iMargin-($iMargin/4))
@@ -199,7 +205,8 @@ Func initUI()
     ;AdlibRegister("_watchDisplay",250)
     AdlibRegister('posTrack',64)
 	GUISetState(@SW_SHOWNOACTIVATE, $hGUI)
-    ;_WinAPI_UpdateLayeredWindowEx($hGUI, -1, -1, $hHBitmap,0xBB)
+    HotKeySet("#^x","_ctxEventMPos")
+    _WinAPI_UpdateLayeredWindowEx($hGUI, -1, -1, $hHBitmap,0xBB)
 EndFunc   ;==>Example
 
 Func WM_EVENTS($hWnd,$MsgID,$WParam,$LParam)
@@ -280,6 +287,10 @@ Func _ctxClipTikOpen()
     Local $sClip=StringStripWS(ClipGet(),3)
     If StringLeft($sClip,1)='#' Then $sClip=StringTrimLeft($sClip,1)
     ShellExecute(StringFormat("https://na.myconnectwise.net/v4_6_release/services/system_io/Service/fv_sr100_request.rails?service_recid=%s&companyName=corsica",$sClip))
+EndFunc
+
+Func _ctxClipCall()
+    ShellExecute(StringFormat("tel:%s",$sClipAct))
 EndFunc
 
 Func _ctxClipTikClip()
@@ -380,6 +391,7 @@ EndFunc
 ;==> Context Menu Calls
 
 Func _InitMenu()
+    Local $sClip=StringStripWS(ClipGet(),3)
     $gidClip = GUICtrlCreateMenu("Clip", $gCtxMain)
     _GUICtrlMenu_SetMenuStyle(GUICtrlGetHandle($gidClip),$MNS_NOCHECK);+$MNS_AUTODISMISS)
     $gidClipSend = GUICtrlCreateMenu("Send", $gidClip)
@@ -393,7 +405,12 @@ Func _InitMenu()
     _GUICtrlMenu_SetMenuStyle(GUICtrlGetHandle($gidClipTik),$MNS_NOCHECK);+$MNS_AUTODISMISS)
     $gidClipTikOpen = GUICtrlCreateMenuItem("Open", $gidClipTik)
     $gidClipTikToClip = GUICtrlCreateMenuItem("Clip2Url", $gidClipTik)
-
+    If StringRegExp($sClip,"^(\+\d{1,2}\s?)?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}$") Then
+        $sClip=StringRegExpReplace($sClip,".*\(?(\d{3})\)?[\s.-]?(\d{3})[\s.-]?(\d{4})$","$1.$2.$3")
+        $sClipAct=$sClip
+        GUICtrlCreateMenuItem("", $gidClip)
+        $gidClipCall=GUICtrlCreateMenuItem("Call "&$sClip, $gidClip)
+    EndIf
     $gidMainSepA=GUICtrlCreateMenuItem("", $gCtxMain)
     ; Pins
     _ArrayNaturalSort($aPins)
@@ -438,6 +455,7 @@ Func _SetMenuEvt()
     GUICtrlSetOnEvent($gidClipMenuPin,"_ctxClipPin")
     GUICtrlSetOnEvent($gidClipSendMacro,"_ctxClipMacro")
     GUICtrlSetOnEvent($gidClipSendRaw,"_ctxClipRaw")
+    GUICtrlSetOnEvent($gidClipCall,"_ctxClipCall")
     GUICtrlSetOnEvent($gidClipTikOpen,"_ctxClipTikOpen")
     GUICtrlSetOnEvent($gidClipTikToClip,"_ctxClipTikClip")
 
@@ -460,6 +478,7 @@ Func _ClearMenuEvt()
     GUICtrlSetOnEvent($gidCtxClipActions,"")
     GUICtrlSetOnEvent($gidClipSendMacro,"")
     GUICtrlSetOnEvent($gidClipSendRaw,"")
+    GUICtrlSetOnEvent($gidClipCall,"")
     GUICtrlSetOnEvent($gidCtxDismiss,"")
     GUICtrlSetOnEvent($gidCtxExit,"")
 EndFunc
@@ -479,6 +498,7 @@ Func _DeleteCxt()
     GUICtrlDelete($gidMainSepB)
     GUICtrlDelete($gidClipSendRaw)
     GUICtrlDelete($gidClipSendMacro)
+    GUICtrlDelete($gidClipCall)
     GUICtrlDelete($gidClipMenuSep)
     For $i=1 To UBound($aClipAct,1)-1
         GUICtrlDelete($aClipAct[$i])
@@ -702,6 +722,14 @@ Func _ctxEvent()
     _InitMenu()
     ShowMenu($hGui, $gCtxMain, ($iSizeIco/2)-$iMargin, $iMargin+($iSizeIco/2))
     ;DllCall("user32.dll", "int", "TrackPopupMenuEx", "hwnd", $ghCtxMain, "int", 0, "int", $iLeft, "int", 0, "hwnd", $hGui, "ptr", 0)
+EndFunc
+
+Func _ctxEventMPos()
+    _DeleteCxt()
+    ;_checkAuth()
+    _InitMenu()
+    $aPos=MouseGetPos()
+    ShowMenu($hGui, $gCtxMain,0,0,1)
 EndFunc
 
 Func __ClipPutHyperlink($sURL,$sLabel="",$sSourceURL="")
