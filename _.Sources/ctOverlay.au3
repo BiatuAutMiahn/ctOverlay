@@ -150,7 +150,7 @@ EndFunc
 Func _gfxDraw()
     ;$hTimer=TimerInit()
     ;$hTimerA=TimerInit()
-    $hBitmapIcon=_GDIPlus_ImageResize($hIcon,$iSizeIco*$iDpiNoScale,$iSizeIco*$iDpiNoScale)
+    $hBitmapIcon=_GDIPlus_ImageResize($hIcon,$iSizeIco*$iDpiScale,$iSizeIco*$iDpiScale)
     ;ConsoleWrite(TimerDiff($hTimerA)&@CRLF)
     $hBitmap=_GDIPlus_BitmapCreateFromGraphics($iWidth, $iHeight, $hGraphics)
     $hContextIcon=_GDIPlus_ImageGetGraphicsContext($hBitmapIcon)
