@@ -254,14 +254,14 @@ EndFunc
 
 Func _ctxMacroCustom()
     If Not waitForIt() Then Return
-    Send(_ProcMacro('Hello {@clip}, please give us a call at your earliest convenience, thanks. 855.411.3387.'),0)
+    Send(_ProcMacro('Hello {@clip}, please give us a call at your earliest convenience, thanks.'),0)
 EndFunc
 
 Func _ctxMacroCustom2()
     If Not waitForIt() Then Return
     Send(_ProcMacro('{~!Time.Floor($iMin,5).Time2Str}{tab}{~!Time.Add($iMin,5).Round($iMin,5).Time2Str}'),0)
     If Not waitForIt() Then Return
-    Send(_ProcMacro('Hello {@clip}, please give us a call at your earliest convenience, thanks. 855.411.3387.'),0)
+    Send(_ProcMacro('Hello {@clip}, please give us a call at your earliest convenience, thanks.'),0)
 EndFunc
 
 Func _ctxClipMacro()
