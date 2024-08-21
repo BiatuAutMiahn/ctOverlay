@@ -5,7 +5,7 @@
 #AutoIt3Wrapper_UseUpx=n
 #AutoIt3Wrapper_Res_Description=Corsica Overlay
 #AutoIt3Wrapper_Res_ProductName=
-#AutoIt3Wrapper_Res_Fileversion=1.2408.1611.3820
+#AutoIt3Wrapper_Res_Fileversion=1.2408.2112.5536
 #AutoIt3Wrapper_Res_Fileversion_AutoIncrement=y
 #AutoIt3Wrapper_Res_Fileversion_First_Increment=y
 #AutoIt3Wrapper_Run_After=echo %fileversion%>..\VERSION.rc
@@ -43,7 +43,7 @@ Opt("TrayIconHide", 1)
 Opt("GUIOnEventMode",1)
 
 Global Const $sAlias="ctOverlay"
-Global Const $VERSION = "1.2408.1611.3820"
+Global Const $VERSION = "1.2408.2112.5536"
 Global $sTitle=$sAlias&" v"&$VERSION
 
 
@@ -60,8 +60,9 @@ Global $gsConfig=$g_sDataDir&"\ctOverlay.ini"
 ;Global $gidCtxClipPing, $gidCtxClipResolve, $gidCtxClipRemote, $gidCtxClipMgmt, $gidCtxClipCmd, $gidCtxClipActions, $gidCtxClipFixFw, $gidCtxClipExplore, $gidCtxClipReg, $gidClipMenuPin, $gidClipMenuUnpin
 Global $gCtxMain
 Global $gidClipMenuPin, $gidClipSendMacro, $gidClipSendRaw, $gidCtxDismiss, $gidCtxExit, $aClipAct, $gidClipMenuUnpin, $gidCtxClipActions
-Global $gidMainSepA, $gidMainSepB, $idClipMenuSep, $gidClipMenu, $gidClipSend, $gidClipCall, $gidClip, $gidClipMenuSep
+Global $gidMainSepA, $gidMainSepB, $gidMainSepC, $idClipMenuSep, $gidClipMenu, $gidClipSend, $gidClipCall, $gidClip, $gidClipMenuSep
 Global $gidClipUrl
+Global $gidMacros, $gidMacroAdSync
 Global $gidClipTikToClip, $gidClipTikOpen
 Global $sClipAct, $gsTooltip, $ghToolTip, $ghCtxMain
 Global $aDisplays, $aMousePos[4], $aMon[4]; For monitor detection
@@ -150,7 +151,7 @@ EndFunc
 Func _gfxDraw()
     ;$hTimer=TimerInit()
     ;$hTimerA=TimerInit()
-    $hBitmapIcon=_GDIPlus_ImageResize($hIcon,$iSizeIco*$iDpiScale,$iSizeIco*$iDpiScale)
+    $hBitmapIcon=_GDIPlus_ImageResize($hIcon,$iSizeIco*$iDpiNoScale,$iSizeIco*$iDpiNoScale)
     ;ConsoleWrite(TimerDiff($hTimerA)&@CRLF)
     $hBitmap=_GDIPlus_BitmapCreateFromGraphics($iWidth, $iHeight, $hGraphics)
     $hContextIcon=_GDIPlus_ImageGetGraphicsContext($hBitmapIcon)
@@ -205,7 +206,7 @@ Func initUI()
     ;AdlibRegister("_watchDisplay",250)
     AdlibRegister('posTrack',64)
 	GUISetState(@SW_SHOWNOACTIVATE, $hGUI)
-    HotKeySet("#^x","_ctxEventMPos")
+    ;HotKeySet("#^x","_ctxEventMPos")
     _WinAPI_UpdateLayeredWindowEx($hGUI, -1, -1, $hHBitmap,0xBB)
 EndFunc   ;==>Example
 
@@ -244,6 +245,10 @@ EndFunc   ;==>WM_MOVING
 
 ;<== Context Menu Calls
 
+Func _ctxMacroAdSync()
+    If Not waitForIt() Then Return
+    Send('powershell -ExecutionPolicy Bypass -Command "iex (iwr -useb '&"'https://automation.corsicatech.com/wl/?id=MBF8RIaworixEqFqA4qCJSb4h7AoBNKe'"&')"{enter}',0)
+EndFunc
 
 Func _ctxClipMacro()
     $gaAutMacros=StringSplit("HOUR,MDAY,MIN,MON,MSEC,SEC,WDAY,YDAY,YEAR",',')
@@ -270,7 +275,7 @@ Func _ctxClipMacro()
         If Not StringInStr($sClip,"{@"&$gaAutMacros[$i]&"}") Then ContinueLoop
         $sClip=StringReplace($sClip,"{@"&$gaAutMacros[$i]&"}",Execute('@'&$gaAutMacros[$i]))
     Next
-    waitForIt()
+    If Not waitForIt() Then Return
     Send($sClip,0)
 EndFunc
 
@@ -279,7 +284,7 @@ Func _ctxClipRaw()
     Local $iIdx=_ctxGetPinParIdx()
     If Not @error Then $sClip=$aPins[$iIdx][0]
     $sClip=StringReplace($sClip,@CRLF,@CR)
-    waitForIt()
+    If Not waitForIt() Then Return
     Send($sClip,1)
 EndFunc
 
@@ -412,6 +417,10 @@ Func _InitMenu()
         $gidClipCall=GUICtrlCreateMenuItem("Call "&$sClip, $gidClip)
     EndIf
     $gidMainSepA=GUICtrlCreateMenuItem("", $gCtxMain)
+    $gidMacros = GUICtrlCreateMenu("Macros", $gCtxMain)
+    _GUICtrlMenu_SetMenuStyle(GUICtrlGetHandle($gidMacros),$MNS_NOCHECK);+$MNS_AUTODISMISS)
+    $gidMacroAdSync = GUICtrlCreateMenuItem("doAdSync", $gidMacros)
+    $gidMainSepB=GUICtrlCreateMenuItem("", $gCtxMain)
     ; Pins
     _ArrayNaturalSort($aPins)
     If UBound($aPins,1) Then
@@ -420,7 +429,7 @@ Func _InitMenu()
             Local $aTemp=_GenCtx($aPins[$z][0],$gCtxMain)
             $aPins[$z][1]=$aTemp
         Next
-        $gidMainSepB=GUICtrlCreateMenuItem("", $gCtxMain)
+        $gidMainSepC=GUICtrlCreateMenuItem("", $gCtxMain)
     EndIf
     ; Footer
     $gidCtxDismiss = GUICtrlCreateMenuItem("Dismiss", $gCtxMain)
@@ -458,6 +467,7 @@ Func _SetMenuEvt()
     GUICtrlSetOnEvent($gidClipCall,"_ctxClipCall")
     GUICtrlSetOnEvent($gidClipTikOpen,"_ctxClipTikOpen")
     GUICtrlSetOnEvent($gidClipTikToClip,"_ctxClipTikClip")
+    GUICtrlSetOnEvent($gidMacroAdSync,"_ctxMacroAdSync")
 
     GUICtrlSetOnEvent($gidCtxDismiss,"_ctxReload")
     GUICtrlSetOnEvent($gidCtxExit,"_ctxExit")
@@ -473,6 +483,7 @@ Func _ClearMenuEvt()
             GUICtrlSetOnEvent($aTemp[$y],"")
         Next
     Next
+    GUICtrlSetOnEvent($gidMacroAdSync,"")
     GUICtrlSetOnEvent($gidClipMenuPin,"")
     GUICtrlSetOnEvent($gidClipMenuUnpin,"")
     GUICtrlSetOnEvent($gidCtxClipActions,"")
@@ -496,16 +507,17 @@ Func _DeleteCxt()
         Next
     Next
     GUICtrlDelete($gidMainSepB)
-    GUICtrlDelete($gidClipSendRaw)
-    GUICtrlDelete($gidClipSendMacro)
-    GUICtrlDelete($gidClipCall)
-    GUICtrlDelete($gidClipMenuSep)
-    For $i=1 To UBound($aClipAct,1)-1
-        GUICtrlDelete($aClipAct[$i])
-    Next
-    GUICtrlDelete($gidClipMenu)
-    GUICtrlDelete($gidClipSend)
+    ;GUICtrlDelete($gidClipSendRaw)
+    ;GUICtrlDelete($gidClipSendMacro)
+    ;GUICtrlDelete($gidClipCall)
+    ;GUICtrlDelete($gidClipMenuSep)
+    ;For $i=1 To UBound($aClipAct,1)-1
+    ;    GUICtrlDelete($aClipAct[$i])
+    ;Next
+    ;GUICtrlDelete($gidClipMenu)
+    ;GUICtrlDelete($gidClipSend)
     GUICtrlDelete($gidClip)
+    GUICtrlDelete($gidMacros)
 EndFunc
 
 Func waitForIt()
