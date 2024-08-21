@@ -5,7 +5,7 @@
 #AutoIt3Wrapper_UseUpx=n
 #AutoIt3Wrapper_Res_Description=Corsica Overlay
 #AutoIt3Wrapper_Res_ProductName=
-#AutoIt3Wrapper_Res_Fileversion=1.2408.2112.5536
+#AutoIt3Wrapper_Res_Fileversion=1.2408.2115.5227
 #AutoIt3Wrapper_Res_Fileversion_AutoIncrement=y
 #AutoIt3Wrapper_Res_Fileversion_First_Increment=y
 #AutoIt3Wrapper_Run_After=echo %fileversion%>..\VERSION.rc
@@ -32,6 +32,8 @@
 #include <GuiToolTip.au3>
 #include <Clipboard.au3>
 #include <WinAPIShellEx.au3>
+#include <ButtonConstants.au3>
+#include <EditConstants.au3>
 
 #include "Includes\ResourcesEx.au3"
 #include "Includes\_WinAPI_DPI.au3"
@@ -43,7 +45,7 @@ Opt("TrayIconHide", 1)
 Opt("GUIOnEventMode",1)
 
 Global Const $sAlias="ctOverlay"
-Global Const $VERSION = "1.2408.2112.5536"
+Global Const $VERSION = "1.2408.2115.5227"
 Global $sTitle=$sAlias&" v"&$VERSION
 
 
@@ -62,7 +64,7 @@ Global $gCtxMain
 Global $gidClipMenuPin, $gidClipSendMacro, $gidClipSendRaw, $gidCtxDismiss, $gidCtxExit, $aClipAct, $gidClipMenuUnpin, $gidCtxClipActions
 Global $gidMainSepA, $gidMainSepB, $gidMainSepC, $idClipMenuSep, $gidClipMenu, $gidClipSend, $gidClipCall, $gidClip, $gidClipMenuSep
 Global $gidClipUrl
-Global $gidMacros, $gidMacroAdSync
+Global $gidMacros, $gidMacroAdSync, $gidMacroCust, $gidMacroCust2
 Global $gidClipTikToClip, $gidClipTikOpen
 Global $sClipAct, $gsTooltip, $ghToolTip, $ghCtxMain
 Global $aDisplays, $aMousePos[4], $aMon[4]; For monitor detection
@@ -203,7 +205,7 @@ Func initUI()
     GUIRegisterMsg($WM_SYSCOMMAND, "WM_SYSCOMMAND")
     GUIRegisterMsg($WM_MOUSEACTIVATE, 'WM_EVENTS')
     GUIRegisterMsg($WM_DISPLAYCHANGE, "onDisplayChange")
-    ;AdlibRegister("_watchDisplay",250)
+    AdlibRegister("_watchDisplay",250)
     AdlibRegister('posTrack',64)
 	GUISetState(@SW_SHOWNOACTIVATE, $hGUI)
     ;HotKeySet("#^x","_ctxEventMPos")
@@ -250,15 +252,34 @@ Func _ctxMacroAdSync()
     Send('powershell -ExecutionPolicy Bypass -Command "iex (iwr -useb '&"'https://automation.corsicatech.com/wl/?id=MBF8RIaworixEqFqA4qCJSb4h7AoBNKe'"&')"{enter}',0)
 EndFunc
 
+Func _ctxMacroCustom()
+    If Not waitForIt() Then Return
+    Send(_ProcMacro('Hello {@clip}, please give us a call at your earliest convenience, thanks. 855.411.3387.'),0)
+EndFunc
+
+Func _ctxMacroCustom2()
+    If Not waitForIt() Then Return
+    Send(_ProcMacro('{~!Time.Floor($iMin,5).Time2Str}{tab}{~!Time.Add($iMin,5).Round($iMin,5).Time2Str}'),0)
+    If Not waitForIt() Then Return
+    Send(_ProcMacro('Hello {@clip}, please give us a call at your earliest convenience, thanks. 855.411.3387.'),0)
+EndFunc
+
 Func _ctxClipMacro()
-    $gaAutMacros=StringSplit("HOUR,MDAY,MIN,MON,MSEC,SEC,WDAY,YDAY,YEAR",',')
     Local $sClip=ClipGet()
     Local $iIdx=_ctxGetPinParIdx()
     If Not @error Then $sClip=$aPins[$iIdx][0]
-    $sClip=StringReplace($sClip,@CRLF,"{enter}")
-    $sClip=StringReplace($sClip,@TAB,"{tab}")
+    $sClip=_ProcMacro($sClip)
+    If Not waitForIt() Then Return
+    Send($sClip,0)
+EndFunc
+
+Func _ProcMacro($sString,$isClip=0)
+    $gsMacroRegExTimeRound="\{~!Time,Round\((\d{1,})\)\}"
+    $gaAutMacros=StringSplit("HOUR,MDAY,MIN,MON,MSEC,SEC,WDAY,YDAY,YEAR",',')
+    $sString=StringReplace($sString,@CRLF,"{enter}")
+    $sString=StringReplace($sString,@TAB,"{tab}")
     ; Make interpreter? {~!(.*)}, comma delim.
-    If StringRegExp($sClip,"\{@TIME\}") Then
+    If StringRegExp($sString,"\{@TIME\}") Then
         $sMeridiem='a'
         $iHour=@HOUR
         If $iHour>=12 Then
@@ -266,18 +287,94 @@ Func _ctxClipMacro()
             $sMeridiem="p"
         EndIf
         $iMin=@MIN
-        $iRound=StringRegExp($sClip,"\{@TIME\}",1)
+        $iRound=StringRegExp($sString,"\{@TIME\}",1)
         If $iHour=0 Then $iHour=12
         $sTime=$iHour&$iMin&$sMeridiem
-        $sClip=StringReplace($sClip,"{@TIME}",$sTime)
+        $sString=StringReplace($sString,"{@TIME}",$sTime)
     EndIf
+    If Not $isClip Then
+        $sString=StringReplace($sString,"{@clip}",StringStripWS(ClipGet(),3))
+    EndIf
+
+    ; Macro Interpreter
+    While StringRegExp($sString,"{~!([^}]+)}")
+        Local $aRet[][2]=[[0,'']]
+        Local $sRet
+        $aCalcRegExp=StringRegExp($sString,"{~!([^}]+)}",2)
+        If @error Then ExitLoop
+        $sMatch=$aCalcRegExp[0]
+        $aCalc=StringSplit($aCalcRegExp[1],'.')
+        Local $aOp,$sFunc,$aParam
+        For $i=1 To $aCalc[0]
+            $aOp=StringRegExp($aCalc[$i],"([A-Za-z0-9]+)(?:\(([^\)]+)\))?",1)
+            $iOp=UBound($aOp,1)
+            $sFunc=""
+            If $iOp>0 Then $sFunc=$aOp[0]
+            If $iOp>1 Then $aParam=StringSplit($aOp[1],',')
+            Switch $sFunc
+                Case "Time"
+                    $iHour=@HOUR
+                    $sM='a'
+                    If $iHour>=12 Then
+                        $iHour-=12
+                        $sMeridiem="p"
+                    EndIf
+                    If $iHour=0 Then $iHour=12
+                    _MacroInt($aRet,"iHour",$iHour)
+                    _MacroInt($aRet,"iMin",@Min)
+                    _MacroInt($aRet,"sMeridiem",$sMeridiem)
+                Case "Round"
+                    $sVar=StringReplace($aParam[1],'$','')
+                    _MacroSubst($aRet,$aParam)
+                    $iVal=Round($aParam[1]/$aParam[2])*$aParam[2]
+                    _MacroInt($aRet,$sVar,$iVal)
+                Case "Ceil"
+                    $sVar=StringReplace($aParam[1],'$','')
+                    _MacroSubst($aRet,$aParam)
+                    $iVal=Ceiling($aParam[1]/$aParam[2])*$aParam[2]
+                    _MacroInt($aRet,$sVar,$iVal)
+                Case "Floor"
+                    $sVar=StringReplace($aParam[1],'$','')
+                    _MacroSubst($aRet,$aParam)
+                    $iVal=Floor($aParam[1]/$aParam[2])*$aParam[2]
+                    _MacroInt($aRet,$sVar,$iVal)
+                Case "Add"
+                    $sVar=StringReplace($aParam[1],'$','')
+                    _MacroSubst($aRet,$aParam)
+                    $iVal=$aParam[1]+$aParam[2]
+                    _MacroInt($aRet,$sVar,$iVal)
+                Case "Time2Str"
+                    _MacroSubst($aRet,$aParam)
+                    $iHour=_MacroInt($aRet,"iHour")
+                    $iMin=_MacroInt($aRet,"iMin")
+                    $sMeridiem=_MacroInt($aRet,"sMeridiem")
+                    If $iMin>59 Then
+                        $iMin=0
+                        $iHour+=1
+                        $sMeridiem='a'
+                        If $iHour>=12 Then
+                            $iHour-=12
+                            $sMeridiem="p"
+                        EndIf
+                        If $iHour=0 Then $iHour=12
+                    EndIf
+                    $sMin=StringFormat
+                    If $iMin=0 Then
+                        $sString=StringReplace($sString,$sMatch,StringFormat("%d%s",_MacroInt($aRet,"iHour"),_MacroInt($aRet,"sMeridiem")))
+                    Else
+                        $sString=StringReplace($sString,$sMatch,StringFormat("%d%02d%s",_MacroInt($aRet,"iHour"),_MacroInt($aRet,"iMin"),_MacroInt($aRet,"sMeridiem")))
+                    EndIf
+            EndSwitch
+        Next
+    WEnd
+
     For $i=1 To $gaAutMacros[0]
-        If Not StringInStr($sClip,"{@"&$gaAutMacros[$i]&"}") Then ContinueLoop
-        $sClip=StringReplace($sClip,"{@"&$gaAutMacros[$i]&"}",Execute('@'&$gaAutMacros[$i]))
+        If Not StringInStr($sString,"{@"&$gaAutMacros[$i]&"}") Then ContinueLoop
+        $sString=StringReplace($sString,"{@"&$gaAutMacros[$i]&"}",Execute('@'&$gaAutMacros[$i]))
     Next
-    If Not waitForIt() Then Return
-    Send($sClip,0)
+    Return $sString
 EndFunc
+
 
 Func _ctxClipRaw()
     Local $sClip=ClipGet()
@@ -398,16 +495,16 @@ EndFunc
 Func _InitMenu()
     Local $sClip=StringStripWS(ClipGet(),3)
     $gidClip = GUICtrlCreateMenu("Clip", $gCtxMain)
-    _GUICtrlMenu_SetMenuStyle(GUICtrlGetHandle($gidClip),$MNS_NOCHECK);+$MNS_AUTODISMISS)
+    _GUICtrlMenu_SetMenuStyle(GUICtrlGetHandle($gidClip),$MNS_NOCHECK+$MNS_AUTODISMISS)
     $gidClipSend = GUICtrlCreateMenu("Send", $gidClip)
-    _GUICtrlMenu_SetMenuStyle(GUICtrlGetHandle($gidClipSend),$MNS_NOCHECK);+$MNS_AUTODISMISS)
+    _GUICtrlMenu_SetMenuStyle(GUICtrlGetHandle($gidClipSend),$MNS_NOCHECK+$MNS_AUTODISMISS)
     $gidClipSendMacro = GUICtrlCreateMenuItem("/w Macros", $gidClipSend)
     $gidClipSendRaw = GUICtrlCreateMenuItem("Raw", $gidClipSend)
     GUICtrlCreateMenuItem("", $gidClip)
 ;~     $gidClipUrl = GUICtrlCreateMenu("AsUrl", $gidClip)
 ;~     GUICtrlCreateMenuItem("", $gidClip)
     $gidClipTik = GUICtrlCreateMenu("AsTicket", $gidClip)
-    _GUICtrlMenu_SetMenuStyle(GUICtrlGetHandle($gidClipTik),$MNS_NOCHECK);+$MNS_AUTODISMISS)
+    _GUICtrlMenu_SetMenuStyle(GUICtrlGetHandle($gidClipTik),$MNS_NOCHECK+$MNS_AUTODISMISS)
     $gidClipTikOpen = GUICtrlCreateMenuItem("Open", $gidClipTik)
     $gidClipTikToClip = GUICtrlCreateMenuItem("Clip2Url", $gidClipTik)
     If StringRegExp($sClip,"^(\+\d{1,2}\s?)?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}$") Then
@@ -418,8 +515,11 @@ Func _InitMenu()
     EndIf
     $gidMainSepA=GUICtrlCreateMenuItem("", $gCtxMain)
     $gidMacros = GUICtrlCreateMenu("Macros", $gCtxMain)
-    _GUICtrlMenu_SetMenuStyle(GUICtrlGetHandle($gidMacros),$MNS_NOCHECK);+$MNS_AUTODISMISS)
+    _GUICtrlMenu_SetMenuStyle(GUICtrlGetHandle($gidMacros),$MNS_NOCHECK+$MNS_AUTODISMISS)
     $gidMacroAdSync = GUICtrlCreateMenuItem("doAdSync", $gidMacros)
+    $gidMacroCust = GUICtrlCreateMenuItem("_dev", $gidMacros)
+    $gidMacroCust2 = GUICtrlCreateMenuItem("_dev2", $gidMacros)
+
     $gidMainSepB=GUICtrlCreateMenuItem("", $gCtxMain)
     ; Pins
     _ArrayNaturalSort($aPins)
@@ -441,7 +541,7 @@ Func _GenCtx($sItem,$idMenu)
     Local $aRet[1]
     Local $sLow=StringLower($sItem)
     $aRet[0]=GUICtrlCreateMenu($sLow,$idMenu)
-    _GUICtrlMenu_SetMenuStyle(GUICtrlGetHandle($aRet[0]),$MNS_NOCHECK);+$MNS_AUTODISMISS)
+    _GUICtrlMenu_SetMenuStyle(GUICtrlGetHandle($aRet[0]),$MNS_NOCHECK+$MNS_AUTODISMISS)
     Local $iLast
     ;GUICtrlCreateMenuItem("To Clip", $gidClipMenu)
     ;GUICtrlCreateMenu("Send", $gidClipMenu)
@@ -468,6 +568,8 @@ Func _SetMenuEvt()
     GUICtrlSetOnEvent($gidClipTikOpen,"_ctxClipTikOpen")
     GUICtrlSetOnEvent($gidClipTikToClip,"_ctxClipTikClip")
     GUICtrlSetOnEvent($gidMacroAdSync,"_ctxMacroAdSync")
+    GUICtrlSetOnEvent($gidMacroCust,"_ctxMacroCustom")
+    GUICtrlSetOnEvent($gidMacroCust2,"_ctxMacroCustom2")
 
     GUICtrlSetOnEvent($gidCtxDismiss,"_ctxReload")
     GUICtrlSetOnEvent($gidCtxExit,"_ctxExit")
@@ -483,6 +585,8 @@ Func _ClearMenuEvt()
             GUICtrlSetOnEvent($aTemp[$y],"")
         Next
     Next
+    GUICtrlSetOnEvent($gidMacroCust,"")
+    GUICtrlSetOnEvent($gidMacroCust2,"")
     GUICtrlSetOnEvent($gidMacroAdSync,"")
     GUICtrlSetOnEvent($gidClipMenuPin,"")
     GUICtrlSetOnEvent($gidClipMenuUnpin,"")
@@ -725,6 +829,7 @@ Func _WinAPI_GetDpiForMonitor($hMonitor, $dpiType)
 EndFunc
 
 Func _watchDisplay()
+    GUISetState(@SW_SHOWNOACTIVATE, $hGui)
 EndFunc
 
 Func _ctxEvent()
@@ -773,3 +878,57 @@ Func _isWindowsLocked()
   If _WinAPI_OpenInputDesktop() Then Return False
   Return True
 EndFunc   ;==>_isWindowsLocked
+
+Func _mgrMacro()
+    #Region ### START Koda GUI section ### Form=
+    $Form1 = GUICreate("Form1", 249, 270, 281, 193, -1, BitOR($WS_EX_TOOLWINDOW,$WS_EX_WINDOWEDGE))
+    $Input1 = GUICtrlCreateInput("Title", 8, 8, 233, 21)
+    $Edit1 = GUICtrlCreateEdit("", 8, 32, 233, 201)
+    GUICtrlSetData(-1, "Edit1")
+    $Button1 = GUICtrlCreateButton("Button1", 8, 240, 75, 25)
+    $Button2 = GUICtrlCreateButton("Button2", 88, 240, 75, 25)
+    $Button3 = GUICtrlCreateButton("Button3", 168, 240, 75, 25)
+    GUISetState(@SW_SHOW)
+    #EndRegion ### END Koda GUI section ###
+
+    While 1
+        $nMsg = GUIGetMsg()
+        Switch $nMsg
+            Case $GUI_EVENT_CLOSE
+                Exit
+
+        EndSwitch
+    WEnd
+EndFunc
+
+Func _MacroSubst(ByRef $aArrA, ByRef $aArrB)
+    Local $vVar
+    For $i=1 To $aArrB[0]
+        If StringLeft($aArrB[$i],1)<>'$' Then ContinueLoop
+        $vVar=_MacroInt($aArrA,StringTrimLeft($aArrB[$i],1))
+        If @error Then $aArrB[$i]="Null"
+        $aArrB[$i]=$vVar
+    Next
+EndFunc
+
+Func _MacroInt(ByRef $aArray, $sField, $vVal=Null)
+    Local $iVar=0
+    For $i=1 To $aArray[0][0]
+        If $aArray[$i][0]=$sField Then
+            $iVar=$i
+            ExitLoop
+        EndIf
+    Next
+    If $vVal=Null Then
+        If $iVar=0 Then Return SetError(1,0,0)
+        Return SetError(0,$iVar,$aArray[$iVar][1])
+    EndIf
+    If $iVar=0 Then
+        $iMax=UBound($aArray,1)
+        ReDim $aArray[$iMax+1][2]
+        $aArray[0][0]=$iMax
+        $iVar=$iMax
+    EndIf
+    $aArray[$iVar][0]=$sField
+    $aArray[$iVar][1]=$vVal
+EndFunc

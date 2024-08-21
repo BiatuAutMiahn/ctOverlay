@@ -4,7 +4,7 @@
 #AutoIt3Wrapper_UseUpx=n
 #AutoIt3Wrapper_Res_Description=Corsica Overlay
 #AutoIt3Wrapper_Res_ProductName=
-#AutoIt3Wrapper_Res_Fileversion=1.2408.2112.5536
+#AutoIt3Wrapper_Res_Fileversion=1.2408.2115.5227
 #AutoIt3Wrapper_Res_Fileversion_AutoIncrement=y
 #AutoIt3Wrapper_Res_Fileversion_First_Increment=y
 #AutoIt3Wrapper_Run_After=echo %fileversion%>..\VERSION.rc
@@ -13883,6 +13883,170 @@ DllCall('shell32.dll', 'none', 'SHUpdateImageW', 'wstr', $sIcon, 'int', $iIndex,
 If @error Then Return SetError(@error, @extended, 0)
 Return 1
 EndFunc
+Global Const $BS_GROUPBOX = 0x0007
+Global Const $BS_BOTTOM = 0x0800
+Global Const $BS_CENTER = 0x0300
+Global Const $BS_DEFPUSHBUTTON = 0x0001
+Global Const $BS_LEFT = 0x0100
+Global Const $BS_MULTILINE = 0x2000
+Global Const $BS_PUSHBOX = 0x000A
+Global Const $BS_PUSHLIKE = 0x1000
+Global Const $BS_RIGHT = 0x0200
+Global Const $BS_RIGHTBUTTON = 0x0020
+Global Const $BS_TOP = 0x0400
+Global Const $BS_VCENTER = 0x0C00
+Global Const $BS_FLAT = 0x8000
+Global Const $BS_ICON = 0x0040
+Global Const $BS_BITMAP = 0x0080
+Global Const $BS_NOTIFY = 0x4000
+Global Const $BS_SPLITBUTTON = 0x0000000C
+Global Const $BS_DEFSPLITBUTTON = 0x0000000D
+Global Const $BS_COMMANDLINK = 0x0000000E
+Global Const $BS_DEFCOMMANDLINK = 0x0000000F
+Global Const $BCSIF_GLYPH = 0x0001
+Global Const $BCSIF_IMAGE = 0x0002
+Global Const $BCSIF_STYLE = 0x0004
+Global Const $BCSIF_SIZE = 0x0008
+Global Const $BCSS_NOSPLIT = 0x0001
+Global Const $BCSS_STRETCH = 0x0002
+Global Const $BCSS_ALIGNLEFT = 0x0004
+Global Const $BCSS_IMAGE = 0x0008
+Global Const $BUTTON_IMAGELIST_ALIGN_LEFT = 0
+Global Const $BUTTON_IMAGELIST_ALIGN_RIGHT = 1
+Global Const $BUTTON_IMAGELIST_ALIGN_TOP = 2
+Global Const $BUTTON_IMAGELIST_ALIGN_BOTTOM = 3
+Global Const $BUTTON_IMAGELIST_ALIGN_CENTER = 4
+Global Const $BS_3STATE = 0x0005
+Global Const $BS_AUTO3STATE = 0x0006
+Global Const $BS_AUTOCHECKBOX = 0x0003
+Global Const $BS_CHECKBOX = 0x0002
+Global Const $BS_RADIOBUTTON = 0x4
+Global Const $BS_AUTORADIOBUTTON = 0x0009
+Global Const $BS_OWNERDRAW = 0xB
+Global Const $GUI_SS_DEFAULT_BUTTON = 0
+Global Const $GUI_SS_DEFAULT_CHECKBOX = 0
+Global Const $GUI_SS_DEFAULT_GROUP = 0
+Global Const $GUI_SS_DEFAULT_RADIO = 0
+Global Const $BCM_FIRST = 0x1600
+Global Const $BCM_GETIDEALSIZE = ($BCM_FIRST + 0x0001)
+Global Const $BCM_GETIMAGELIST = ($BCM_FIRST + 0x0003)
+Global Const $BCM_GETNOTE = ($BCM_FIRST + 0x000A)
+Global Const $BCM_GETNOTELENGTH = ($BCM_FIRST + 0x000B)
+Global Const $BCM_GETSPLITINFO = ($BCM_FIRST + 0x0008)
+Global Const $BCM_GETTEXTMARGIN = ($BCM_FIRST + 0x0005)
+Global Const $BCM_SETDROPDOWNSTATE = ($BCM_FIRST + 0x0006)
+Global Const $BCM_SETIMAGELIST = ($BCM_FIRST + 0x0002)
+Global Const $BCM_SETNOTE = ($BCM_FIRST + 0x0009)
+Global Const $BCM_SETSHIELD = ($BCM_FIRST + 0x000C)
+Global Const $BCM_SETSPLITINFO = ($BCM_FIRST + 0x0007)
+Global Const $BCM_SETTEXTMARGIN = ($BCM_FIRST + 0x0004)
+Global Const $BM_CLICK = 0xF5
+Global Const $BM_GETCHECK = 0xF0
+Global Const $BM_GETIMAGE = 0xF6
+Global Const $BM_GETSTATE = 0xF2
+Global Const $BM_SETCHECK = 0xF1
+Global Const $BM_SETDONTCLICK = 0xF8
+Global Const $BM_SETIMAGE = 0xF7
+Global Const $BM_SETSTATE = 0xF3
+Global Const $BM_SETSTYLE = 0xF4
+Global Const $BCN_FIRST = -1250
+Global Const $BCN_DROPDOWN = ($BCN_FIRST + 0x0002)
+Global Const $BCN_HOTITEMCHANGE = ($BCN_FIRST + 0x0001)
+Global Const $BN_CLICKED = 0
+Global Const $BN_PAINT = 1
+Global Const $BN_HILITE = 2
+Global Const $BN_UNHILITE = 3
+Global Const $BN_DISABLE = 4
+Global Const $BN_DOUBLECLICKED = 5
+Global Const $BN_SETFOCUS = 6
+Global Const $BN_KILLFOCUS = 7
+Global Const $BN_PUSHED = $BN_HILITE
+Global Const $BN_UNPUSHED = $BN_UNHILITE
+Global Const $BN_DBLCLK = $BN_DOUBLECLICKED
+Global Const $BST_CHECKED = 0x1
+Global Const $BST_INDETERMINATE = 0x2
+Global Const $BST_UNCHECKED = 0x0
+Global Const $BST_FOCUS = 0x8
+Global Const $BST_PUSHED = 0x4
+Global Const $BST_DONTCLICK = 0x000080
+Global Const $ES_LEFT = 0
+Global Const $ES_CENTER = 1
+Global Const $ES_RIGHT = 2
+Global Const $ES_MULTILINE = 4
+Global Const $ES_UPPERCASE = 8
+Global Const $ES_LOWERCASE = 16
+Global Const $ES_PASSWORD = 32
+Global Const $ES_AUTOVSCROLL = 64
+Global Const $ES_AUTOHSCROLL = 128
+Global Const $ES_NOHIDESEL = 256
+Global Const $ES_OEMCONVERT = 1024
+Global Const $ES_READONLY = 2048
+Global Const $ES_WANTRETURN = 4096
+Global Const $ES_NUMBER = 8192
+Global Const $EC_ERR = -1
+Global Const $ECM_FIRST = 0X1500
+Global Const $EM_CANUNDO = 0xC6
+Global Const $EM_CHARFROMPOS = 0xD7
+Global Const $EM_EMPTYUNDOBUFFER = 0xCD
+Global Const $EM_FMTLINES = 0xC8
+Global Const $EM_GETCUEBANNER = ($ECM_FIRST + 2)
+Global Const $EM_GETFIRSTVISIBLELINE = 0xCE
+Global Const $EM_GETHANDLE = 0xBD
+Global Const $EM_GETIMESTATUS = 0xD9
+Global Const $EM_GETLIMITTEXT = 0xD5
+Global Const $EM_GETLINE = 0xC4
+Global Const $EM_GETLINECOUNT = 0xBA
+Global Const $EM_GETMARGINS = 0xD4
+Global Const $EM_GETMODIFY = 0xB8
+Global Const $EM_GETPASSWORDCHAR = 0xD2
+Global Const $EM_GETRECT = 0xB2
+Global Const $EM_GETSEL = 0xB0
+Global Const $EM_GETTHUMB = 0xBE
+Global Const $EM_GETWORDBREAKPROC = 0xD1
+Global Const $EM_HIDEBALLOONTIP = ($ECM_FIRST + 4)
+Global Const $EM_LIMITTEXT = 0xC5
+Global Const $EM_LINEFROMCHAR = 0xC9
+Global Const $EM_LINEINDEX = 0xBB
+Global Const $EM_LINELENGTH = 0xC1
+Global Const $EM_LINESCROLL = 0xB6
+Global Const $EM_POSFROMCHAR = 0xD6
+Global Const $EM_REPLACESEL = 0xC2
+Global Const $EM_SCROLL = 0xB5
+Global Const $EM_SCROLLCARET = 0x00B7
+Global Const $EM_SETCUEBANNER = ($ECM_FIRST + 1)
+Global Const $EM_SETHANDLE = 0xBC
+Global Const $EM_SETIMESTATUS = 0xD8
+Global Const $EM_SETLIMITTEXT = $EM_LIMITTEXT
+Global Const $EM_SETMARGINS = 0xD3
+Global Const $EM_SETMODIFY = 0xB9
+Global Const $EM_SETPASSWORDCHAR = 0xCC
+Global Const $EM_SETREADONLY = 0xCF
+Global Const $EM_SETRECT = 0xB3
+Global Const $EM_SETRECTNP = 0xB4
+Global Const $EM_SETSEL = 0xB1
+Global Const $EM_SETTABSTOPS = 0xCB
+Global Const $EM_SETWORDBREAKPROC = 0xD0
+Global Const $EM_SHOWBALLOONTIP = ($ECM_FIRST + 3)
+Global Const $EM_UNDO = 0xC7
+Global Const $EC_LEFTMARGIN = 0x1
+Global Const $EC_RIGHTMARGIN = 0x2
+Global Const $EC_USEFONTINFO = 0xFFFF
+Global Const $EMSIS_COMPOSITIONSTRING = 0x1
+Global Const $EIMES_GETCOMPSTRATONCE = 0x1
+Global Const $EIMES_CANCELCOMPSTRINFOCUS = 0x2
+Global Const $EIMES_COMPLETECOMPSTRKILLFOCUS = 0x4
+Global Const $EN_ALIGN_LTR_EC = 0x700
+Global Const $EN_ALIGN_RTL_EC = 0x701
+Global Const $EN_CHANGE = 0x300
+Global Const $EN_ERRSPACE = 0x500
+Global Const $EN_HSCROLL = 0X601
+Global Const $EN_KILLFOCUS = 0x200
+Global Const $EN_MAXTEXT = 0x501
+Global Const $EN_SETFOCUS = 0x100
+Global Const $EN_UPDATE = 0x400
+Global Const $EN_VSCROLL = 0x602
+Global Const $GUI_SS_DEFAULT_EDIT = 0x003010c0
+Global Const $GUI_SS_DEFAULT_INPUT = 0x00000080
 #AutoIt3Wrapper_Au3Check_Parameters=-d -w 1 -w 2 -w 3 -w 4 -w 5 -w 6
 Global Const $RT_ACCELERATOR = 9
 Global Const $RT_ANICURSOR = 21
@@ -14022,92 +14186,6 @@ Global Const $VFT2_UNKNOWN = 0x00000000
 Global Const $VFT2_FONT_RASTER = 0x00000001
 Global Const $VFT2_FONT_TRUETYPE = 0x00000003
 Global Const $VFT2_FONT_VECTOR = 0x00000002
-Global Const $BS_GROUPBOX = 0x0007
-Global Const $BS_BOTTOM = 0x0800
-Global Const $BS_CENTER = 0x0300
-Global Const $BS_DEFPUSHBUTTON = 0x0001
-Global Const $BS_LEFT = 0x0100
-Global Const $BS_MULTILINE = 0x2000
-Global Const $BS_PUSHBOX = 0x000A
-Global Const $BS_PUSHLIKE = 0x1000
-Global Const $BS_RIGHT = 0x0200
-Global Const $BS_RIGHTBUTTON = 0x0020
-Global Const $BS_TOP = 0x0400
-Global Const $BS_VCENTER = 0x0C00
-Global Const $BS_FLAT = 0x8000
-Global Const $BS_ICON = 0x0040
-Global Const $BS_BITMAP = 0x0080
-Global Const $BS_NOTIFY = 0x4000
-Global Const $BS_SPLITBUTTON = 0x0000000C
-Global Const $BS_DEFSPLITBUTTON = 0x0000000D
-Global Const $BS_COMMANDLINK = 0x0000000E
-Global Const $BS_DEFCOMMANDLINK = 0x0000000F
-Global Const $BCSIF_GLYPH = 0x0001
-Global Const $BCSIF_IMAGE = 0x0002
-Global Const $BCSIF_STYLE = 0x0004
-Global Const $BCSIF_SIZE = 0x0008
-Global Const $BCSS_NOSPLIT = 0x0001
-Global Const $BCSS_STRETCH = 0x0002
-Global Const $BCSS_ALIGNLEFT = 0x0004
-Global Const $BCSS_IMAGE = 0x0008
-Global Const $BUTTON_IMAGELIST_ALIGN_LEFT = 0
-Global Const $BUTTON_IMAGELIST_ALIGN_RIGHT = 1
-Global Const $BUTTON_IMAGELIST_ALIGN_TOP = 2
-Global Const $BUTTON_IMAGELIST_ALIGN_BOTTOM = 3
-Global Const $BUTTON_IMAGELIST_ALIGN_CENTER = 4
-Global Const $BS_3STATE = 0x0005
-Global Const $BS_AUTO3STATE = 0x0006
-Global Const $BS_AUTOCHECKBOX = 0x0003
-Global Const $BS_CHECKBOX = 0x0002
-Global Const $BS_RADIOBUTTON = 0x4
-Global Const $BS_AUTORADIOBUTTON = 0x0009
-Global Const $BS_OWNERDRAW = 0xB
-Global Const $GUI_SS_DEFAULT_BUTTON = 0
-Global Const $GUI_SS_DEFAULT_CHECKBOX = 0
-Global Const $GUI_SS_DEFAULT_GROUP = 0
-Global Const $GUI_SS_DEFAULT_RADIO = 0
-Global Const $BCM_FIRST = 0x1600
-Global Const $BCM_GETIDEALSIZE = ($BCM_FIRST + 0x0001)
-Global Const $BCM_GETIMAGELIST = ($BCM_FIRST + 0x0003)
-Global Const $BCM_GETNOTE = ($BCM_FIRST + 0x000A)
-Global Const $BCM_GETNOTELENGTH = ($BCM_FIRST + 0x000B)
-Global Const $BCM_GETSPLITINFO = ($BCM_FIRST + 0x0008)
-Global Const $BCM_GETTEXTMARGIN = ($BCM_FIRST + 0x0005)
-Global Const $BCM_SETDROPDOWNSTATE = ($BCM_FIRST + 0x0006)
-Global Const $BCM_SETIMAGELIST = ($BCM_FIRST + 0x0002)
-Global Const $BCM_SETNOTE = ($BCM_FIRST + 0x0009)
-Global Const $BCM_SETSHIELD = ($BCM_FIRST + 0x000C)
-Global Const $BCM_SETSPLITINFO = ($BCM_FIRST + 0x0007)
-Global Const $BCM_SETTEXTMARGIN = ($BCM_FIRST + 0x0004)
-Global Const $BM_CLICK = 0xF5
-Global Const $BM_GETCHECK = 0xF0
-Global Const $BM_GETIMAGE = 0xF6
-Global Const $BM_GETSTATE = 0xF2
-Global Const $BM_SETCHECK = 0xF1
-Global Const $BM_SETDONTCLICK = 0xF8
-Global Const $BM_SETIMAGE = 0xF7
-Global Const $BM_SETSTATE = 0xF3
-Global Const $BM_SETSTYLE = 0xF4
-Global Const $BCN_FIRST = -1250
-Global Const $BCN_DROPDOWN = ($BCN_FIRST + 0x0002)
-Global Const $BCN_HOTITEMCHANGE = ($BCN_FIRST + 0x0001)
-Global Const $BN_CLICKED = 0
-Global Const $BN_PAINT = 1
-Global Const $BN_HILITE = 2
-Global Const $BN_UNHILITE = 3
-Global Const $BN_DISABLE = 4
-Global Const $BN_DOUBLECLICKED = 5
-Global Const $BN_SETFOCUS = 6
-Global Const $BN_KILLFOCUS = 7
-Global Const $BN_PUSHED = $BN_HILITE
-Global Const $BN_UNPUSHED = $BN_UNHILITE
-Global Const $BN_DBLCLK = $BN_DOUBLECLICKED
-Global Const $BST_CHECKED = 0x1
-Global Const $BST_INDETERMINATE = 0x2
-Global Const $BST_UNCHECKED = 0x0
-Global Const $BST_FOCUS = 0x8
-Global Const $BST_PUSHED = 0x4
-Global Const $BST_DONTCLICK = 0x000080
 Global Const $MF_UNHILITE = 0x0
 Global Const $MF_ENABLED = 0x0
 Global Const $MF_UNCHECKED = 0x0
@@ -19397,7 +19475,7 @@ Opt("TrayAutoPause", 0)
 Opt("TrayIconHide", 1)
 Opt("GUIOnEventMode",1)
 Global Const $sAlias="ctOverlay"
-Global Const $VERSION = "1.2408.2112.5536"
+Global Const $VERSION = "1.2408.2115.5227"
 Global $sTitle=$sAlias&" v"&$VERSION
 Global Const $MA_NOACTIVATE = 3
 Global Const $MA_NOACTIVATEANDEAT = 4
@@ -19409,7 +19487,7 @@ Global $gCtxMain
 Global $gidClipMenuPin, $gidClipSendMacro, $gidClipSendRaw, $gidCtxDismiss, $gidCtxExit, $aClipAct, $gidClipMenuUnpin, $gidCtxClipActions
 Global $gidMainSepA, $gidMainSepB, $gidMainSepC, $idClipMenuSep, $gidClipMenu, $gidClipSend, $gidClipCall, $gidClip, $gidClipMenuSep
 Global $gidClipUrl
-Global $gidMacros, $gidMacroAdSync
+Global $gidMacros, $gidMacroAdSync, $gidMacroCust, $gidMacroCust2
 Global $gidClipTikToClip, $gidClipTikOpen
 Global $sClipAct, $gsTooltip, $ghToolTip, $ghCtxMain
 Global $aDisplays, $aMousePos[4], $aMon[4]
@@ -19556,14 +19634,30 @@ Func _ctxMacroAdSync()
 If Not waitForIt() Then Return
 Send('powershell -ExecutionPolicy Bypass -Command "iex (iwr -useb '&"'https://automation.corsicatech.com/wl/?id=MBF8RIaworixEqFqA4qCJSb4h7AoBNKe'"&')"{enter}',0)
 EndFunc
+Func _ctxMacroCustom()
+If Not waitForIt() Then Return
+Send(_ProcMacro('Hello {@clip}, please give us a call at your earliest convenience, thanks. 855.411.3387.'),0)
+EndFunc
+Func _ctxMacroCustom2()
+If Not waitForIt() Then Return
+Send(_ProcMacro('{~!Time.Floor($iMin,5).Time2Str}{tab}{~!Time.Add($iMin,5).Ceil($iMin,5).Time2Str}'),0)
+If Not waitForIt() Then Return
+Send(_ProcMacro('Hello {@clip}, please give us a call at your earliest convenience, thanks. 855.411.3387.'),0)
+EndFunc
 Func _ctxClipMacro()
-$gaAutMacros=StringSplit("HOUR,MDAY,MIN,MON,MSEC,SEC,WDAY,YDAY,YEAR",',')
 Local $sClip=ClipGet()
 Local $iIdx=_ctxGetPinParIdx()
 If Not @error Then $sClip=$aPins[$iIdx][0]
-$sClip=StringReplace($sClip,@CRLF,"{enter}")
-$sClip=StringReplace($sClip,@TAB,"{tab}")
-If StringRegExp($sClip,"\{@TIME\}") Then
+$sClip=_ProcMacro($sClip)
+If Not waitForIt() Then Return
+Send($sClip,0)
+EndFunc
+Func _ProcMacro($sString,$isClip=0)
+$gsMacroRegExTimeRound="\{~!Time,Round\((\d{1,})\)\}"
+$gaAutMacros=StringSplit("HOUR,MDAY,MIN,MON,MSEC,SEC,WDAY,YDAY,YEAR",',')
+$sString=StringReplace($sString,@CRLF,"{enter}")
+$sString=StringReplace($sString,@TAB,"{tab}")
+If StringRegExp($sString,"\{@TIME\}") Then
 $sMeridiem='a'
 $iHour=@HOUR
 If $iHour>=12 Then
@@ -19571,17 +19665,71 @@ $iHour-=12
 $sMeridiem="p"
 EndIf
 $iMin=@MIN
-$iRound=StringRegExp($sClip,"\{@TIME\}",1)
+$iRound=StringRegExp($sString,"\{@TIME\}",1)
 If $iHour=0 Then $iHour=12
 $sTime=$iHour&$iMin&$sMeridiem
-$sClip=StringReplace($sClip,"{@TIME}",$sTime)
+$sString=StringReplace($sString,"{@TIME}",$sTime)
 EndIf
-For $i=1 To $gaAutMacros[0]
-If Not StringInStr($sClip,"{@"&$gaAutMacros[$i]&"}") Then ContinueLoop
-$sClip=StringReplace($sClip,"{@"&$gaAutMacros[$i]&"}",Execute('@'&$gaAutMacros[$i]))
+If Not $isClip Then
+$sString=StringReplace($sString,"{@clip}",StringStripWS(ClipGet(),3))
+EndIf
+While StringRegExp($sString,"{~!([^}]+)}")
+Local $aRet[][2]=[[0,'']]
+Local $sRet
+$aCalcRegExp=StringRegExp($sString,"{~!([^}]+)}",2)
+If @error Then ExitLoop
+$sMatch=$aCalcRegExp[0]
+$aCalc=StringSplit($aCalcRegExp[1],'.')
+Local $aOp,$sFunc,$aParam
+For $i=1 To $aCalc[0]
+$aOp=StringRegExp($aCalc[$i],"([A-Za-z0-9]+)(?:\(([^\)]+)\))?",1)
+$iOp=UBound($aOp,1)
+$sFunc=""
+If $iOp>0 Then $sFunc=$aOp[0]
+If $iOp>1 Then $aParam=StringSplit($aOp[1],',')
+Switch $sFunc
+Case "Time"
+$iHour=@HOUR
+$sM='a'
+If $iHour>=12 Then
+$iHour-=12
+$sMeridiem="p"
+EndIf
+If $iHour=0 Then $iHour=12
+_MacroInt($aRet,"iHour",$iHour)
+_MacroInt($aRet,"iMin",@Min)
+_MacroInt($aRet,"sMeridiem",$sMeridiem)
+Case "Round"
+$sVar=StringReplace($aParam[1],'$','')
+_MacroSubst($aRet,$aParam)
+$iVal=Round($aParam[1]/$aParam[2])*$aParam[2]
+_MacroInt($aRet,$sVar,$iVal)
+Case "Ceil"
+$sVar=StringReplace($aParam[1],'$','')
+_MacroSubst($aRet,$aParam)
+$iVal=Ceiling($aParam[1]/$aParam[2])*$aParam[2]
+_MacroInt($aRet,$sVar,$iVal)
+Case "Floor"
+$sVar=StringReplace($aParam[1],'$','')
+_MacroSubst($aRet,$aParam)
+$iVal=Floor($aParam[1]/$aParam[2])*$aParam[2]
+_MacroInt($aRet,$sVar,$iVal)
+Case "Add"
+$sVar=StringReplace($aParam[1],'$','')
+_MacroSubst($aRet,$aParam)
+$iVal=$aParam[1]+$aParam[2]
+_MacroInt($aRet,$sVar,$iVal)
+Case "Time2Str"
+_MacroSubst($aRet,$aParam)
+$sString=StringReplace($sString,$sMatch,StringFormat("%d%02d%s",_MacroInt($aRet,"iHour"),_MacroInt($aRet,"iMin"),_MacroInt($aRet,"sMeridiem")))
+EndSwitch
 Next
-If Not waitForIt() Then Return
-Send($sClip,0)
+WEnd
+For $i=1 To $gaAutMacros[0]
+If Not StringInStr($sString,"{@"&$gaAutMacros[$i]&"}") Then ContinueLoop
+$sString=StringReplace($sString,"{@"&$gaAutMacros[$i]&"}",Execute('@'&$gaAutMacros[$i]))
+Next
+Return $sString
 EndFunc
 Func _ctxClipRaw()
 Local $sClip=ClipGet()
@@ -19706,6 +19854,8 @@ $gidMainSepA=GUICtrlCreateMenuItem("", $gCtxMain)
 $gidMacros = GUICtrlCreateMenu("Macros", $gCtxMain)
 _GUICtrlMenu_SetMenuStyle(GUICtrlGetHandle($gidMacros),$MNS_NOCHECK)
 $gidMacroAdSync = GUICtrlCreateMenuItem("doAdSync", $gidMacros)
+$gidMacroCust = GUICtrlCreateMenuItem("_dev", $gidMacros)
+$gidMacroCust2 = GUICtrlCreateMenuItem("_dev2", $gidMacros)
 $gidMainSepB=GUICtrlCreateMenuItem("", $gCtxMain)
 _ArrayNaturalSort($aPins)
 If UBound($aPins,1) Then
@@ -19747,6 +19897,8 @@ GUICtrlSetOnEvent($gidClipCall,"_ctxClipCall")
 GUICtrlSetOnEvent($gidClipTikOpen,"_ctxClipTikOpen")
 GUICtrlSetOnEvent($gidClipTikToClip,"_ctxClipTikClip")
 GUICtrlSetOnEvent($gidMacroAdSync,"_ctxMacroAdSync")
+GUICtrlSetOnEvent($gidMacroCust,"_ctxMacroCustom")
+GUICtrlSetOnEvent($gidMacroCust2,"_ctxMacroCustom2")
 GUICtrlSetOnEvent($gidCtxDismiss,"_ctxReload")
 GUICtrlSetOnEvent($gidCtxExit,"_ctxExit")
 EndFunc
@@ -19760,6 +19912,8 @@ For $y=1 To UBound($aTemp,1)-1
 GUICtrlSetOnEvent($aTemp[$y],"")
 Next
 Next
+GUICtrlSetOnEvent($gidMacroCust,"")
+GUICtrlSetOnEvent($gidMacroCust2,"")
 GUICtrlSetOnEvent($gidMacroAdSync,"")
 GUICtrlSetOnEvent($gidClipMenuPin,"")
 GUICtrlSetOnEvent($gidClipMenuUnpin,"")
@@ -19989,4 +20143,51 @@ EndFunc
 Func _isWindowsLocked()
 If _WinAPI_OpenInputDesktop() Then Return False
 Return True
+EndFunc
+Func _mgrMacro()
+$Form1 = GUICreate("Form1", 249, 270, 281, 193, -1, BitOR($WS_EX_TOOLWINDOW,$WS_EX_WINDOWEDGE))
+$Input1 = GUICtrlCreateInput("Title", 8, 8, 233, 21)
+$Edit1 = GUICtrlCreateEdit("", 8, 32, 233, 201)
+GUICtrlSetData(-1, "Edit1")
+$Button1 = GUICtrlCreateButton("Button1", 8, 240, 75, 25)
+$Button2 = GUICtrlCreateButton("Button2", 88, 240, 75, 25)
+$Button3 = GUICtrlCreateButton("Button3", 168, 240, 75, 25)
+GUISetState(@SW_SHOW)
+While 1
+$nMsg = GUIGetMsg()
+Switch $nMsg
+Case $GUI_EVENT_CLOSE
+Exit
+EndSwitch
+WEnd
+EndFunc
+Func _MacroSubst(ByRef $aArrA, ByRef $aArrB)
+Local $vVar
+For $i=1 To $aArrB[0]
+If StringLeft($aArrB[$i],1)<>'$' Then ContinueLoop
+$vVar=_MacroInt($aArrA,StringTrimLeft($aArrB[$i],1))
+If @error Then $aArrB[$i]="Null"
+$aArrB[$i]=$vVar
+Next
+EndFunc
+Func _MacroInt(ByRef $aArray, $sField, $vVal=Null)
+Local $iVar=0
+For $i=1 To $aArray[0][0]
+If $aArray[$i][0]=$sField Then
+$iVar=$i
+ExitLoop
+EndIf
+Next
+If $vVal=Null Then
+If $iVar=0 Then Return SetError(1,0,0)
+Return SetError(0,$iVar,$aArray[$iVar][1])
+EndIf
+If $iVar=0 Then
+$iMax=UBound($aArray,1)
+ReDim $aArray[$iMax+1][2]
+$aArray[0][0]=$iMax
+$iVar=$iMax
+EndIf
+$aArray[$iVar][0]=$sField
+$aArray[$iVar][1]=$vVal
 EndFunc
