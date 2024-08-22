@@ -244,7 +244,6 @@ Func WM_MOVING($hWnd,$iMsg,$wParam,$lParam)
     Return $GUI_RUNDEFMSG
 EndFunc   ;==>WM_MOVING
 
-
 ;<== Context Menu Calls
 
 Func _ctxMacroAdSync()
@@ -314,7 +313,7 @@ Func _ProcMacro($sString,$isClip=0)
             Switch $sFunc
                 Case "Time"
                     $iHour=@HOUR
-                    $sM='a'
+                    $sMeridiem='a'
                     If $iHour>=12 Then
                         $iHour-=12
                         $sMeridiem="p"
