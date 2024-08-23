@@ -61,11 +61,11 @@ Global $gsConfig=$g_sDataDir&"\ctOverlay.ini"
 ;Global $gaRes, $gaResLast, $gidClipMenu, $gidClipMenuSep, $sClipAct
 ;Global $gidCtxClipPing, $gidCtxClipResolve, $gidCtxClipRemote, $gidCtxClipMgmt, $gidCtxClipCmd, $gidCtxClipActions, $gidCtxClipFixFw, $gidCtxClipExplore, $gidCtxClipReg, $gidClipMenuPin, $gidClipMenuUnpin
 Global $gCtxMain
-Global $gidClipMenuPin, $gidClipSendMacro, $gidClipSendRaw, $gidCtxDismiss, $gidCtxExit, $aClipAct, $gidClipMenuUnpin, $gidCtxClipActions
-Global $gidMainSepA, $gidMainSepB, $gidMainSepC, $idClipMenuSep, $gidClipMenu, $gidClipSend, $gidClipCall, $gidClip, $gidClipMenuSep
-Global $gidClipUrl
-Global $gidMacros, $gidMacroAdSync, $gidMacroCust, $gidMacroCust2
-Global $gidClipTikToClip, $gidClipTikOpen
+; iType, sAlias, (sCallback | aSubMenu), idCtrl, hCtrl
+Global $aCtxMenu[1][5]
+$aCtxMenu[0][0]=0
+_InitDefMenu()
+
 Global $sClipAct, $gsTooltip, $ghToolTip, $ghCtxMain
 Global $aDisplays, $aMousePos[4], $aMon[4]; For monitor detection
 
@@ -89,7 +89,7 @@ Global $hGUI
 $iLeft=@DesktopWidth-$iRight
 
 getMonInfo()
-_loadPins()
+;_loadPins()
 initUI()
 While Sleep(1)
 WEnd
@@ -222,6 +222,7 @@ Func WM_EVENTS($hWnd,$MsgID,$WParam,$LParam)
         ;ClientToScreen($hGui, $iX, $iY)
         ;ConsoleWrite($aPos[0]&':'&$aPos[1]&@CRLF)
         ;TrackPopupMenu($hGui, $ghCtxMain, $iX, $iY)
+        GUISetState(@SW_SHOWNOACTIVATE, $hGUI)
         AdlibRegister("_ctxEvent")
     EndIf
     ;If $aPos[4]<>0 Then _SendMessage($hGui,$WM_COMMAND,_WinAPI_MakeLong($aPos[4],$BN_CLICKED),GUICtrlGetHandle($aPos[4]))
@@ -416,9 +417,8 @@ Func _ctxGetPinParIdx()
 EndFunc
 
 Func _ctxReload()
-    _ClearMenuEvt()
-    _DeleteCxt()
-    _InitMenu()
+    _destroyMenu($aCtxMenu, $gCtxMain)
+    _InitMenu2($aCtxMenu, $gCtxMain)
 EndFunc
 
 Func _ctxExit()
@@ -467,7 +467,7 @@ Func _ctxClipUnpin()
         $aNew[$iMax][0]=$aPins[$i][0]
     Next
     If $bMod Then
-        _DeleteCxt()
+        _destroyMenu($aCtxMenu, $gCtxMain)
         $aPins=$aNew
         _savePins()
     EndIf
@@ -491,136 +491,89 @@ EndFunc
 
 ;==> Context Menu Calls
 
-Func _InitMenu()
-    Local $sClip=StringStripWS(ClipGet(),3)
-    $gidClip = GUICtrlCreateMenu("Clip", $gCtxMain)
-    _GUICtrlMenu_SetMenuStyle(GUICtrlGetHandle($gidClip),$MNS_NOCHECK+$MNS_AUTODISMISS)
-    $gidClipSend = GUICtrlCreateMenu("Send", $gidClip)
-    _GUICtrlMenu_SetMenuStyle(GUICtrlGetHandle($gidClipSend),$MNS_NOCHECK+$MNS_AUTODISMISS)
-    $gidClipSendMacro = GUICtrlCreateMenuItem("/w Macros", $gidClipSend)
-    $gidClipSendRaw = GUICtrlCreateMenuItem("Raw", $gidClipSend)
-    GUICtrlCreateMenuItem("", $gidClip)
-;~     $gidClipUrl = GUICtrlCreateMenu("AsUrl", $gidClip)
-;~     GUICtrlCreateMenuItem("", $gidClip)
-    $gidClipTik = GUICtrlCreateMenu("AsTicket", $gidClip)
-    _GUICtrlMenu_SetMenuStyle(GUICtrlGetHandle($gidClipTik),$MNS_NOCHECK+$MNS_AUTODISMISS)
-    $gidClipTikOpen = GUICtrlCreateMenuItem("Open", $gidClipTik)
-    $gidClipTikToClip = GUICtrlCreateMenuItem("Clip2Url", $gidClipTik)
-    If StringRegExp($sClip,"^(\+\d{1,2}\s?)?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}$") Then
-        $sClip=StringRegExpReplace($sClip,".*\(?(\d{3})\)?[\s.-]?(\d{3})[\s.-]?(\d{4})$","$1.$2.$3")
-        $sClipAct=$sClip
-        GUICtrlCreateMenuItem("", $gidClip)
-        $gidClipCall=GUICtrlCreateMenuItem("Call "&$sClip, $gidClip)
-    EndIf
-    $gidMainSepA=GUICtrlCreateMenuItem("", $gCtxMain)
-    $gidMacros = GUICtrlCreateMenu("Macros", $gCtxMain)
-    _GUICtrlMenu_SetMenuStyle(GUICtrlGetHandle($gidMacros),$MNS_NOCHECK+$MNS_AUTODISMISS)
-    $gidMacroAdSync = GUICtrlCreateMenuItem("doAdSync", $gidMacros)
-    $gidMacroCust = GUICtrlCreateMenuItem("_dev", $gidMacros)
-    $gidMacroCust2 = GUICtrlCreateMenuItem("_dev2", $gidMacros)
-
-    $gidMainSepB=GUICtrlCreateMenuItem("", $gCtxMain)
-    ; Pins
-    _ArrayNaturalSort($aPins)
-    If UBound($aPins,1) Then
-        For $z=0 To UBound($aPins,1)-1
-            If $aPins[$z][0]=="" Then ContinueLoop
-            Local $aTemp=_GenCtx($aPins[$z][0],$gCtxMain)
-            $aPins[$z][1]=$aTemp
-        Next
-        $gidMainSepC=GUICtrlCreateMenuItem("", $gCtxMain)
-    EndIf
-    ; Footer
-    $gidCtxDismiss = GUICtrlCreateMenuItem("Dismiss", $gCtxMain)
-    $gidCtxExit = GUICtrlCreateMenuItem("Exit", $gCtxMain)
-    _SetMenuEvt()
+Func _MenuAdd(ByRef $aMenu,$iType,$sAlias=Null,$vActPar=Null)
+    $iMax=UBound($aMenu,1)
+    $iMaxY=UBound($aMenu,2)
+    ReDim $aMenu[$iMax+1][$iMaxY]
+    $aMenu[$iMax][0]=$iType
+    $aMenu[$iMax][1]=$sAlias
+    $aMenu[$iMax][2]=$vActPar
+    $aMenu[0][0]=$iMax
 EndFunc
 
-Func _GenCtx($sItem,$idMenu)
-    Local $aRet[1]
-    Local $sLow=StringLower($sItem)
-    $aRet[0]=GUICtrlCreateMenu($sLow,$idMenu)
-    _GUICtrlMenu_SetMenuStyle(GUICtrlGetHandle($aRet[0]),$MNS_NOCHECK+$MNS_AUTODISMISS)
-    Local $iLast
-    ;GUICtrlCreateMenuItem("To Clip", $gidClipMenu)
-    ;GUICtrlCreateMenu("Send", $gidClipMenu)
-    $iMax=UBound($aRet,1)
-    ReDim $aRet[$iMax+1]
-    ;GUICtrlCreateMenuItem("", $aRet[0])
-    $aRet[$iMax]=GUICtrlCreateMenuItem("UnPin", $aRet[0])
-    Return $aRet
+Func _InitDefMenu()
+    ; iType, sAlias, (sCallback | aSubMenu), idCtrl, hCtrl
+    ; iType 0=Separator, 1=Item, 2=Submenu, 3=Dynamic, 4=
+    Local $aCtxMacros[1][5]
+    $aCtxMacros[0][0]=0
+    Local $aCtxPins[1][5]
+    $aCtxPins[0][0]=0
+    Local $aCtxClipSend[1][5]
+    _MenuAdd($aCtxClipSend,1,'/w Macros','_ctxClipMacro')
+    _MenuAdd($aCtxClipSend,1,'Raw','_ctxClipRaw')
+
+    Local $aCtxClipTik[1][5]
+    _MenuAdd($aCtxClipTik,1,'Open','_ctxClipTikOpen')
+    _MenuAdd($aCtxClipTik,1,'mkUrl','_ctxClipTikClip')
+
+    Local $aCtxClip[1][5]
+    _MenuAdd($aCtxClip,2,'Send',$aCtxClipSend)
+    _MenuAdd($aCtxClip,2,'AsTicket',$aCtxClipTik)
+    ;_MenuAdd($aCtxClip,0)
+    ;_MenuAdd($aCtxClip,1,'Call {~!@Clip.RegExpRepl("^(\+\d{1,2}\s?)?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}$","$1.$2.$3")}','_ctxClipCall')
+
+    _MenuAdd($aCtxMenu,2,'Clip',$aCtxClip)
+    ;_MenuAdd($aCtxMenu,2,'Macros',$aCtxMacros)
+    ;_MenuAdd($aCtxMenu,0)
+    ;_MenuAdd($aCtxMenu,2,'Pins',$aCtxPins)
+    _MenuAdd($aCtxMenu,0)
+    _MenuAdd($aCtxMenu,1,'Dismiss','_ctxReload')
+    _MenuAdd($aCtxMenu,1,'Exit','_ctxExit')
+
 EndFunc
 
-Func _SetMenuEvt()
-    For $z=0 To UBound($aPins,1)-1
-        $aTemp=$aPins[$z][1]
-        GUICtrlSetOnEvent($aTemp[2],"_ctxClipPut")
-        GUICtrlSetOnEvent($aTemp[4],"_ctxClipMacro")
-        GUICtrlSetOnEvent($aTemp[5],"_ctxClipRaw")
-        $iMax=UBound($aTemp,1)-1
-        GUICtrlSetOnEvent($aTemp[$iMax],"_ctxClipUnpin")
+; iType, sAlias, (sCallback | aSubMenu), idCtrl, hCtrl
+; iType 0=Separator, 1=Item, 2=Submenu, 3=Dynamic, 4=
+Func _InitMenu2(ByRef $aMenu, $idParent)
+    Local $idCtrl,$hCtrl,$sAlias,$iType,$vActPar
+    For $i=1 To $aMenu[0][0]
+        $iType=$aMenu[$i][0]
+        $sAlias=$aMenu[$i][1]
+        $vActPar=$aMenu[$i][2]
+        Switch $iType
+            Case 0; Create Separator
+                $idCtrl=GUICtrlCreateMenuItem('', $idParent)
+            Case 1; Create Item
+                $idCtrl=GUICtrlCreateMenuItem($sAlias, $idParent)
+                GUICtrlSetOnEvent($idCtrl,$vActPar)
+            Case 2; Create SubMenu
+                $idCtrl=GUICtrlCreateMenu($sAlias, $idParent)
+        EndSwitch
+        $hCtrl=GUICtrlGetHandle($idCtrl)
+        If $iType=2 Then
+            _GUICtrlMenu_SetMenuStyle($hCtrl,$MNS_NOCHECK+$MNS_AUTODISMISS)
+            _InitMenu2($vActPar,$idCtrl)
+        EndIf
+        $aMenu[$i][3]=$idCtrl
+        $aMenu[$i][4]=$hCtrl
     Next
-    GUICtrlSetOnEvent($gidClipMenuPin,"_ctxClipPin")
-    GUICtrlSetOnEvent($gidClipSendMacro,"_ctxClipMacro")
-    GUICtrlSetOnEvent($gidClipSendRaw,"_ctxClipRaw")
-    GUICtrlSetOnEvent($gidClipCall,"_ctxClipCall")
-    GUICtrlSetOnEvent($gidClipTikOpen,"_ctxClipTikOpen")
-    GUICtrlSetOnEvent($gidClipTikToClip,"_ctxClipTikClip")
-    GUICtrlSetOnEvent($gidMacroAdSync,"_ctxMacroAdSync")
-    GUICtrlSetOnEvent($gidMacroCust,"_ctxMacroCustom")
-    GUICtrlSetOnEvent($gidMacroCust2,"_ctxMacroCustom2")
-
-    GUICtrlSetOnEvent($gidCtxDismiss,"_ctxReload")
-    GUICtrlSetOnEvent($gidCtxExit,"_ctxExit")
+    ;Return $aMenu
 EndFunc
 
-Func _ClearMenuEvt()
-    For $i=1 To UBound($aClipAct,1)-1
-        GUICtrlSetOnEvent($aClipAct[$i],"")
+Func _destroyMenu(ByRef $aMenu, $idParent)
+    Local $idCtrl
+    For $i=1 To $aMenu[0][0]
+        $idCtrl=$aMenu[$i][3]
+        If $aMenu[$i][0]=2 Then
+            ConsoleWrite($aMenu[$i][0]&','&$aMenu[$i][1]&','&$aMenu[$i][3]&@CRLF)
+            _destroyMenu($aMenu[$i][2],$idCtrl)
+        Else
+            GUICtrlSetOnEvent($idCtrl,"")
+        EndIf
+        ConsoleWrite($idCtrl&@CRLF)
+        GUICtrlDelete($idCtrl)
     Next
-    For $z=0 To UBound($aPins,1)-1
-        $aTemp=$aPins[$z][1]
-        For $y=1 To UBound($aTemp,1)-1
-            GUICtrlSetOnEvent($aTemp[$y],"")
-        Next
-    Next
-    GUICtrlSetOnEvent($gidMacroCust,"")
-    GUICtrlSetOnEvent($gidMacroCust2,"")
-    GUICtrlSetOnEvent($gidMacroAdSync,"")
-    GUICtrlSetOnEvent($gidClipMenuPin,"")
-    GUICtrlSetOnEvent($gidClipMenuUnpin,"")
-    GUICtrlSetOnEvent($gidCtxClipActions,"")
-    GUICtrlSetOnEvent($gidClipSendMacro,"")
-    GUICtrlSetOnEvent($gidClipSendRaw,"")
-    GUICtrlSetOnEvent($gidClipCall,"")
-    GUICtrlSetOnEvent($gidCtxDismiss,"")
-    GUICtrlSetOnEvent($gidCtxExit,"")
-EndFunc
-
-Func _DeleteCxt()
-    _ClearMenuEvt()
-    GUICtrlDelete($gidCtxExit)
-    GUICtrlDelete($gidCtxDismiss)
-    GUICtrlDelete($gidMainSepA)
-    ; Pins
-    For $z=0 To UBound($aPins,1)-1
-        Local $aTemp=$aPins[$z][1]
-        For $y=UBound($aTemp,1)-1 To 0 Step -1
-            GUICtrlDelete($aTemp[$y])
-        Next
-    Next
-    GUICtrlDelete($gidMainSepB)
-    ;GUICtrlDelete($gidClipSendRaw)
-    ;GUICtrlDelete($gidClipSendMacro)
-    ;GUICtrlDelete($gidClipCall)
-    ;GUICtrlDelete($gidClipMenuSep)
-    ;For $i=1 To UBound($aClipAct,1)-1
-    ;    GUICtrlDelete($aClipAct[$i])
-    ;Next
-    ;GUICtrlDelete($gidClipMenu)
-    ;GUICtrlDelete($gidClipSend)
-    GUICtrlDelete($gidClip)
-    GUICtrlDelete($gidMacros)
+    ;Return $aMenu
 EndFunc
 
 Func waitForIt()
@@ -638,7 +591,6 @@ Func waitForIt()
     Sleep(250)
     Return True
 EndFunc
-
 
 Func _savePins()
     Local $sPins=""
@@ -752,6 +704,7 @@ EndFunc
 
 ; Track mouse and update GUI position.
 Func posTrack()
+    GUISetState(@SW_SHOWNOACTIVATE, $hGUI)
     Local $iTimer=TimerInit()
     Local $iMon=-1, $tPos = _WinAPI_GetMousePos()
     $aMousePos[0]=DllStructGetData($tPos,1)
@@ -789,11 +742,10 @@ Func posTrack()
                 ;_Log($iLeft&'x'&$iTop)
                 _WinAPI_SetProcessDpiAwarenessContext($DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2)
             EndIf
-            GUISetState(@SW_SHOWNOACTIVATE, $hGui)
+            ;GUISetState(@SW_SHOWNOACTIVATE, $hGui)
         EndIf
     EndIf
 EndFunc
-
 
 ; Show a menu in a given GUI window which belongs to a given GUI ctrl
 Func ShowMenu($hWnd, $nContextID, $X, $Y, $iMouse=0)
@@ -833,17 +785,17 @@ EndFunc
 
 Func _ctxEvent()
     AdlibUnRegister("_ctxEvent")
-    _DeleteCxt()
-    ;_checkAuth()
-    _InitMenu()
+    _destroyMenu($aCtxMenu, $gCtxMain)
+    _InitMenu2($aCtxMenu, $gCtxMain)
     ShowMenu($hGui, $gCtxMain, ($iSizeIco/2)-$iMargin, $iMargin+($iSizeIco/2))
-    ;DllCall("user32.dll", "int", "TrackPopupMenuEx", "hwnd", $ghCtxMain, "int", 0, "int", $iLeft, "int", 0, "hwnd", $hGui, "ptr", 0)
 EndFunc
 
 Func _ctxEventMPos()
-    _DeleteCxt()
+    ;_DeleteCxt()
     ;_checkAuth()
-    _InitMenu()
+    _destroyMenu($aCtxMenu, $gCtxMain)
+    _InitMenu2($aCtxMenu, $gCtxMain)
+    ;_InitMenu()
     $aPos=MouseGetPos()
     ShowMenu($hGui, $gCtxMain,0,0,1)
 EndFunc
