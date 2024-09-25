@@ -5,7 +5,7 @@
 #AutoIt3Wrapper_UseUpx=n
 #AutoIt3Wrapper_Res_Description=Corsica Overlay
 #AutoIt3Wrapper_Res_ProductName=
-#AutoIt3Wrapper_Res_Fileversion=1.2408.2115.5227
+#AutoIt3Wrapper_Res_Fileversion=1.2409.2515.1225
 #AutoIt3Wrapper_Res_Fileversion_AutoIncrement=y
 #AutoIt3Wrapper_Res_Fileversion_First_Increment=y
 #AutoIt3Wrapper_Run_After=echo %fileversion%>..\VERSION.rc
@@ -23,6 +23,7 @@
  Source: https://github.com/BiatuAutMiahn/cwNotifyAu3
 
 #ce ----------------------------------------------------------------------------
+
 #include <WinAPISys.au3>
 #include <GUIConstantsEx.au3>
 #include <WindowsConstants.au3>
@@ -34,6 +35,7 @@
 #include <WinAPIShellEx.au3>
 #include <ButtonConstants.au3>
 #include <EditConstants.au3>
+#include <WinAPIGdi.au3>
 
 #include "Includes\ResourcesEx.au3"
 #include "Includes\_WinAPI_DPI.au3"
@@ -45,17 +47,21 @@ Opt("TrayIconHide", 1)
 Opt("GUIOnEventMode",1)
 
 Global Const $sAlias="ctOverlay"
-Global Const $VERSION = "1.2408.2115.5227"
+Global Const $VERSION = "1.2409.2515.1225"
 Global $sTitle=$sAlias&" v"&$VERSION
 
 
 Global Const $MA_NOACTIVATE = 3
 Global Const $MA_NOACTIVATEANDEAT = 4
 
-Global $sDllUser32=DllOpen("User32.dll")
-Global $g_dll_hShCore = DllOpen("Shcore.dll")
+Global $gDll_hKernel32=DllOpen("Kernel32.dll")
+Global $gDll_hNTDll=DllOpen("NTDll.dll")
+Global $gDll_hUser32=DllOpen("User32.dll")
+Global $gDll_hShCore = DllOpen("Shcore.dll")
+
 Global $g_sDataDir=@LocalAppDataDir&"\InfinitySys\ctOverlay"
 Global $gsConfig=$g_sDataDir&"\ctOverlay.ini"
+FileDelete($gsConfig)
 ;Global $gidAuthSep, $gidAuthAdd, $gidClip, $gidClipSend, $gidClipSendMacro, $gidClipSendRaw, $gidMainSepA, $gidMainSepB, $gidCtxDismiss, $gidCtxExit, $gCtxMain, $gidAuth, $gidCtxClipOpenSN
 ;Global $gidClipWatchMenu
 ;Global $gaRes, $gaResLast, $gidClipMenu, $gidClipMenuSep, $sClipAct
@@ -74,34 +80,36 @@ Global $aMenu[0]
 Local $iLeftLast,$iTopLast
 ; Init GDI
 Global $hSelfLib, $hGraphics, $hBitmap, $hContext, $hHBitmap, $hBrushBl, $hBrushGr, $hBrushRd, $hBrushBk, $hIcon, $hHBitmap
-Global $sAppDir=@LocalAppDataDir&"\InfinitySys\cwOverlay.log"
-Global $sLog=$sAppDir&"\cwOverlay.log"
-
+;Global $g_sDataDir=@LocalAppDataDir&"\InfinitySys\cwOverlay.log"
+Global $g_sLog=$g_sDataDir&"\cwOverlay.log"
+FileClose(FileOpen($g_sLog,2))
 _WinAPI_SetProcessDpiAwarenessContext($DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2)
-Global $iDpiScale=1.5
-Global $iDpiNoScale=_WinAPI_GetDpiForPrimaryMonitor()/96
-Global $iDpi=$iDpiNoScale*$iDpiScale
-
-ConsoleWrite($iDpi&@CRLF)
+Global $iDpiLast,$iDpiScale=1.5
+Global $aMonitors=_GetMonInfo()
+Global $iPriMon=$aMonitors[0][1]
+Global $iMonLast=-1
+Global $iDpiNoScale=$aMonitors[$iPriMon][5]/96
+Global $iDpi=1.0;$iDpiNoScale*$iDpiScale
+_Log(StringFormat("[a] iDpiScale:%0.3f, iDpiNoScale:%0.3f, iDpi:%0.3f",$iDpiScale,$iDpiNoScale,$iDpi))
+;_ArrayDisplay($aMonitors)
 Local $iSizeIco, $iMargin, $iWidth, $iHeight, $iRight, $iTop
 _gfxRecalc()
 Global $hGUI
 $iLeft=@DesktopWidth-$iRight
 
-getMonInfo()
+;getMonInfo()
 ;_loadPins()
 initUI()
-While Sleep(1)
+While Sleep(125)
 WEnd
 _gfxDispose()
 _GDIPlus_Shutdown()
 GUIDelete($hGUI)
 
-
 Func _Log($sLine)
-    If Not FileExists($sAppDir) Then DirCreate($sAppDir)
-    If FileGetSize($sLog)>1024*1024 Then FileDelete($sLog)
-    FileWriteLine($sLog,$sLine)
+    If Not FileExists($g_sDataDir) Then DirCreate($g_sDataDir)
+    If FileGetSize($g_sLog)>1024*1024 Then FileDelete($g_sLog)
+    FileWriteLine($g_sLog,$sLine)
     ConsoleWrite($sLine&@CRLF)
 EndFunc
 
@@ -112,6 +120,7 @@ Func _gfxRecalc()
     $iHeight=$iMargin+$iSizeIco+$iMargin
     $iRight=$iWidth
     $iTop=18*$iDpi
+    _Log(StringFormat("[b] iDpi:%0.3f, iSizeIco:%d, iWidth:%d, iHeight:%d, iRight:%d, iTop:%d",$iDpi,$iSizeIco,$iWidth,$iHeight,$iRight,$iTop))
 EndFunc
 
 Func _gfxInit()
@@ -126,7 +135,6 @@ Func _gfxInit()
         $hData = _WinAPI_LoadResource($hSelfLib, $hResource)
         $pData = _WinAPI_LockResource($hData)
         $hIcon = _WinAPI_CreateIconFromResourceEx($pData,$iSize)
-
     Else
         $hIcon = _WinAPI_ShellExtractIcon(@ScriptDir&"\Res\ctdkgrrd.ico",0,2048,2048)
     EndIf
@@ -153,7 +161,12 @@ EndFunc
 Func _gfxDraw()
     ;$hTimer=TimerInit()
     ;$hTimerA=TimerInit()
-    $hBitmapIcon=_GDIPlus_ImageResize($hIcon,$iSizeIco*$iDpiNoScale,$iSizeIco*$iDpiNoScale)
+    $hBitmapIcon=_GDIPlus_ImageResize($hIcon,$iSizeIco,$iSizeIco)
+    _GDIPlus_BitmapSetResolution($hBitmapIcon,96,96)
+    ;$hBitmapIcon=_GDIPlus_ImageScale($hIcon,$iSizeIco/2048,$iSizeIco/2048,$GDIP_INTERPOLATIONMODE_NEARESTNEIGHBOR)
+
+    _Log(StringFormat("[c] iDpi:%0.3f, iSizeIco:%d, iDpiNoScale:%0.3f, iSizeIco*iDpiNoScale:%0.3f, 24*iDpiNoScale:%f",$iDpi,$iSizeIco,$iDpiNoScale,$iSizeIco*$iDpiNoScale,24*$iDpiNoScale))
+
     ;ConsoleWrite(TimerDiff($hTimerA)&@CRLF)
     $hBitmap=_GDIPlus_BitmapCreateFromGraphics($iWidth, $iHeight, $hGraphics)
     $hContextIcon=_GDIPlus_ImageGetGraphicsContext($hBitmapIcon)
@@ -169,16 +182,12 @@ Func _gfxDraw()
     _GDIPlus_GraphicsFillEllipse($hContext, 0, 0, $iMargin+$iSizeIco+$iMargin, $iMargin+$iSizeIco+$iMargin, $hBrushBk);$hBrushRd)
 	_GDIPlus_GraphicsFillRect($hContext, $iMargin+($iSizeIco/2), 0, $iWidth-$iMargin-($iSizeIco/2), $iMargin+$iSizeIco+$iMargin, $hBrushBk);$hBrushGr)
     $iIcoHeight=_GDIPlus_ImageGetHeight($hBitmapIcon)
-    _Log($iIcoHeight)
-    _Log($iSizeIco)
-    _Log($iDpiNoScale)
-    _Log($iDpi)
-    _Log($iDpiScale)
-    _Log('')
+    _Log(StringFormat("[d] iIcoHeight:%d, iMargin:%d",$iIcoHeight,$iMargin))
+    ;_Log('')
  ;   _GDIPlus_GraphicsDrawRect($hContextIcon,0,0,$iIcoHeight-1,$iIcoHeight-1)
  ;   _GDIPlus_GraphicsDrawRect($hContext,0,0,$iWidth-1,$iHeight-1)
+    _GDIPlus_GraphicsFillEllipse($hContext, $iMargin, $iMargin, $iSizeIco, $iSizeIco, $hBrushRd);$hBrushBl)
     _GDIPlus_GraphicsDrawImage($hContext, $hBitmapIcon, $iMargin, $iMargin);-($iMargin/4), $iMargin-($iMargin/4))
-    ;_GDIPlus_GraphicsFillEllipse($hContext, $iMargin, $iMargin, $iSizeIco, $iSizeIco, $hBrushRd);$hBrushBl)
     ;_GDIPlus_GraphicsDrawRect($hContext,$iMargin,$iMargin,$iWidth,$iHeight)
     ;ConsoleWrite((Mod($iIcoHeight,2)==0)&','&$iIcoHeight&','&$iDpiNoScale&','&$iMargin&','&$iSizeIco&@CRLF)
     $hHBitmap=_GDIPlus_BitmapCreateHBITMAPFromBitmap($hBitmap)
@@ -206,8 +215,9 @@ Func initUI()
     GUIRegisterMsg($WM_MOUSEACTIVATE, 'WM_EVENTS')
     GUIRegisterMsg($WM_DISPLAYCHANGE, "onDisplayChange")
     AdlibRegister("_watchDisplay",250)
-    AdlibRegister('posTrack',64)
+    AdlibRegister('posTrackCall',64)
 	GUISetState(@SW_SHOWNOACTIVATE, $hGUI)
+
     ;HotKeySet("#^x","_ctxEventMPos")
     _WinAPI_UpdateLayeredWindowEx($hGUI, -1, -1, $hHBitmap,0xBB)
 EndFunc   ;==>Example
@@ -254,14 +264,14 @@ EndFunc
 
 Func _ctxMacroCustom()
     If Not waitForIt() Then Return
-    Send(_ProcMacro('Hello {@clip}, please give us a call at your earliest convenience, thanks.'),0)
+    Send(_ProcMacro('Hello {@clip}, please give us a call at your earliest convenience, thanks. 855.411.3387'),0)
 EndFunc
 
 Func _ctxMacroCustom2()
     If Not waitForIt() Then Return
     Send(_ProcMacro('{~!Time.Floor($iMin,5).Time2Str}{tab}{~!Time.Add($iMin,5).Round($iMin,5).Time2Str}'),0)
     If Not waitForIt() Then Return
-    Send(_ProcMacro('Hello {@clip}, please give us a call at your earliest convenience, thanks.'),0)
+    Send(_ProcMacro('Hello {@clip}, please give us a call at your earliest convenience, thanks. 855.411.3387'),0)
 EndFunc
 
 Func _ctxClipMacro()
@@ -374,7 +384,6 @@ Func _ProcMacro($sString,$isClip=0)
     Next
     Return $sString
 EndFunc
-
 
 Func _ctxClipRaw()
     Local $sClip=ClipGet()
@@ -581,12 +590,12 @@ Func waitForIt()
     Do
         _ToolTip("Click Left: Send, Right: Abort")
         Sleep(10)
-        If _IsPressed("02", $sDllUser32) Then
+        If _IsPressed("02", $gDll_hUser32) Then
             _ToolTip("")
             Sleep(250)
             Return False
         EndIf
-    Until _IsPressed("01", $sDllUser32)
+    Until _IsPressed("01", $gDll_hUser32)
     _ToolTip("")
     Sleep(250)
     Return True
@@ -622,7 +631,6 @@ Func _loadPins()
     EndIf
     Return SetError(0,0,1)
 EndFunc
-
 
 Func _ToolTip($sMsg,$iPosX=Default,$iPosY=Default)
     Local $hDC,$hFont,$hOldFont,$aPos
@@ -661,11 +669,16 @@ Func Pixel_Distance($x1, $y1, $x2, $y2) ;Pythagoras theorem for 2D
     EndIf
 EndFunc   ;==>Pixel_Distance
 
-
 Func onDisplayChange($hWnd, $nMsgID, $wParam, $lParam)
     ConsoleWrite('Resolution changed to "' & @DesktopWidth & 'x' & @DesktopHeight & '".'&@CRLF)
-    getMonInfo()
-    posTrack()
+    ;getMonInfo()
+    _Log(StringFormat('DisplayChange:%dx%d',@DesktopWidth,@DesktopHeight))
+    $aMonitors=_GetMonInfo()
+    For $i=1 To $aMonitors[0][0]
+        _Log(StringFormat("onDisplayChange:iMonDpi=%f,%f",$i,$aMonitors[$i][5]))
+    Next
+    Local $iRet=posTrack(1)
+    _Log(StringFormat("onDisplayChange:PosTrack=%d,%d,%d",$iRet,@error,@extended))
     Return $GUI_RUNDEFMSG
 EndFunc
 
@@ -702,49 +715,59 @@ Func getMonInfo()
     Next
 EndFunc
 
+Func posTrackCall()
+    posTrack()
+EndFunc
+
 ; Track mouse and update GUI position.
-Func posTrack()
+Func posTrack($bForce=0)
+    If Not $bForce And _isWindowsLocked() Then Return SetError(1,0,0)
     GUISetState(@SW_SHOWNOACTIVATE, $hGUI)
     Local $iTimer=TimerInit()
     Local $iMon=-1, $tPos = _WinAPI_GetMousePos()
     $aMousePos[0]=DllStructGetData($tPos,1)
     $aMousePos[2]=DllStructGetData($tPos,2)
-    If $aMousePos[0]<>$aMousePos[1] Or $aMousePos[2]<>$aMousePos[3] Then
-        $aMousePos[1]=$aMousePos[0]
-        $aMousePos[3]=$aMousePos[2]
-        Local $hMon=_WinAPI_MonitorFromPoint($tPos)
-        If @error Then return
-        For $i=1 To UBound($aDisplays,1)-1
-            If $aDisplays[$i][0]==$hMon Then
-                $iMon=$i
-                $iDpiNoScale=$aDisplays[$i][15]/96
-                $iDpi=$iDpiNoScale*$iDpiScale
-                ;ConsoleWrite($iDpi&@CRLF)
-                ExitLoop
-            EndIf
-        Next
-        If $iMon=-1 Then Return SetError(1,0,False)
-        _gfxRecalc()
-        $iRight=$iWidth
-        $iTop=18*$iDpi
-        $iLeft=$aDisplays[$iMon][1]+$aDisplays[$iMon][3]-$iRight
-        $iTop=$aDisplays[$iMon][2]+$iTop
-        If $iLeft<>$iLeftLast Or $iTop<>$iTopLast Then
-            If _isWindowsLocked() Then Return
-            $iLeftLast=$iLeft
-            $iTopLast=$iTop
-            ;GUISetState(@SW_HIDE, $hGUI)
-            $aPos=WinGetPos($hGui)
-            If $aPos[0]<>$iLeft Or $aPos[1]<>$iTop Then
-                GUISetState(@SW_HIDE, $hGui)
-                _gfxReload()
-                WinMove($hGui,"",$iLeft,$iTop)
-                ;_Log($iLeft&'x'&$iTop)
-                _WinAPI_SetProcessDpiAwarenessContext($DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2)
-            EndIf
-            ;GUISetState(@SW_SHOWNOACTIVATE, $hGui)
+    If Not $bForce And ($aMousePos[0]=$aMousePos[1] Or $aMousePos[2]=$aMousePos[3]) Then Return SetError(1,1,0)
+    $aMousePos[1]=$aMousePos[0]
+    $aMousePos[3]=$aMousePos[2]
+    Local $hMon=_WinAPI_MonitorFromPoint($tPos)
+    If @error Then return SetError(1,2,0)
+    For $i=1 To UBound($aMonitors,1)-1
+        If $aMonitors[$i][0]==$hMon Then
+            $iMon=$i
+            ExitLoop
         EndIf
+    Next
+    If $iMon=-1 Or $iMon="" Then
+        $aMonitors=_GetMonInfo()
+        posTrack(1)
+        Return SetError(1,3,False)
     EndIf
+    If Not $bForce And $iMonLast=$iMon Then Return SetError(0,4,1)
+    _Log(StringFormat("iMon:%d",$iMon))
+    $iDpiNoScale=$aMonitors[$i][5]/96
+    $iDpi=$iDpiNoScale*$iDpiScale
+    _Log(StringFormat("[a:a] iDpiScale:%0.3f, iDpiNoScale:%0.3f, iDpi:%0.3f",$iDpiScale,$iDpiNoScale,$iDpi))
+    $iMonLast=$iMon
+    _gfxRecalc()
+    $aPos=_WinAPI_GetPosFromRect($aMonitors[$iMon][2])
+    $iLeft=$aPos[0]+$aPos[2]-$iRight
+    $iTop=$aPos[1]+$iTop
+    If $bForce Or ($iLeft<>$iLeftLast Or $iTop<>$iTopLast) Then
+        $iLeftLast=$iLeft
+        $iTopLast=$iTop
+        ;GUISetState(@SW_HIDE, $hGUI)
+        $aPos=WinGetPos($hGui)
+        If $bForce Or ($aPos[0]<>$iLeft Or $aPos[1]<>$iTop) Then
+            GUISetState(@SW_HIDE, $hGui)
+            _gfxReload()
+            WinMove($hGui,"",$iLeft,$iTop)
+            ;_Log($iLeft&'x'&$iTop)
+            _WinAPI_SetProcessDpiAwarenessContext($DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2)
+        EndIf
+        GUISetState(@SW_SHOWNOACTIVATE, $hGui)
+    EndIf
+    Return SetError(0,5,0)
 EndFunc
 
 ; Show a menu in a given GUI window which belongs to a given GUI ctrl
@@ -773,7 +796,7 @@ EndFunc
 
 Func _WinAPI_GetDpiForMonitor($hMonitor, $dpiType)
   Local $X, $Y
-  $aRet = DllCall($g_dll_hShCore, "long", "GetDpiForMonitor", "long", $hMonitor, "int", $dpiType, "uint*", $X, "uint*", $Y)
+  $aRet = DllCall($gDll_hShCore, "long", "GetDpiForMonitor", "long", $hMonitor, "int", $dpiType, "uint*", $X, "uint*", $Y)
   If @error Or Not IsArray($aRet) Then Return SetError(1, 0, 0)
   Local $aDPI[2] = [$aRet[3],$aRet[4]]
   Return $aDPI
@@ -830,28 +853,6 @@ Func _isWindowsLocked()
   Return True
 EndFunc   ;==>_isWindowsLocked
 
-Func _mgrMacro()
-    #Region ### START Koda GUI section ### Form=
-    $Form1 = GUICreate("Form1", 249, 270, 281, 193, -1, BitOR($WS_EX_TOOLWINDOW,$WS_EX_WINDOWEDGE))
-    $Input1 = GUICtrlCreateInput("Title", 8, 8, 233, 21)
-    $Edit1 = GUICtrlCreateEdit("", 8, 32, 233, 201)
-    GUICtrlSetData(-1, "Edit1")
-    $Button1 = GUICtrlCreateButton("Button1", 8, 240, 75, 25)
-    $Button2 = GUICtrlCreateButton("Button2", 88, 240, 75, 25)
-    $Button3 = GUICtrlCreateButton("Button3", 168, 240, 75, 25)
-    GUISetState(@SW_SHOW)
-    #EndRegion ### END Koda GUI section ###
-
-    While 1
-        $nMsg = GUIGetMsg()
-        Switch $nMsg
-            Case $GUI_EVENT_CLOSE
-                Exit
-
-        EndSwitch
-    WEnd
-EndFunc
-
 Func _MacroSubst(ByRef $aArrA, ByRef $aArrB)
     Local $vVar
     For $i=1 To $aArrB[0]
@@ -883,3 +884,113 @@ Func _MacroInt(ByRef $aArray, $sField, $vVal=Null)
     $aArray[$iVar][0]=$sField
     $aArray[$iVar][1]=$vVal
 EndFunc
+
+Func _GetMonInfo()
+    ;aRet [hMon,Rect,WorkAera,isPrimary,DevName,DpiX]
+    Local $iDimY=6
+    Local $aRet[1][$iDimY],$aMon=__WinAPI_EnumDisplayMonitors()
+    If @error Or Not IsArray($aMon) Then Return SetError(1, 0, 0)
+    For $i = 1 To $aMon[0][0]
+        Local $iMax=UBound($aRet,1)
+        ReDim $aRet[$iMax+1][$iDimY]
+        $aRet[$iMax][0]=$aMon[$i][0]
+        Local $aInfo=__WinAPI_GetMonitorInfo($aMon[$i][0])
+        If @error Or Not IsArray($aInfo) Then
+            $aRet[$iMax][1]=@Error
+            ContinueLoop
+        EndIf
+        For $j=1 To 4
+            $aRet[$iMax][$j]=$aInfo[$j-1]
+        Next
+        If $aInfo[2] Then $aRet[0][1]=$i
+        Local $tX=DllStructCreate("int dpiX"), $tY = DllStructCreate("int dpiY")
+        Local $aDpiInfo=DllCall($gDll_hShCore, "long", "GetDpiForMonitor", "handle", $aMon[$i][0], "long", $MDT_DEFAULT, "struct*", $tX, "struct*", $tY)
+        $aRet[$iMax][5]=$tX.dpiX
+    Next
+    $aRet[0][0]=$iMax
+    Return SetError(0,0,$aRet)
+EndFunc
+
+; #FUNCTION# ====================================================================================================================
+; Author.........: Yashied
+; Modified.......: BiatuAutMiahn, jpm
+; ===============================================================================================================================
+Func __WinAPI_EnumDisplayMonitors($hDC = 0, $tRECT = 0)
+	Local $hEnumProc = DllCallbackRegister('__EnumDisplayMonitorsProc', 'bool', 'handle;handle;ptr;lparam')
+
+	Dim $__g_vEnum[101][2] = [[0]]
+	Local $aCall = DllCall($gDll_hUser32, 'bool', 'EnumDisplayMonitors', 'handle', $hDC, 'struct*', $tRECT, _
+			'ptr', DllCallbackGetPtr($hEnumProc), 'lparam', 0)
+	If @error Or Not $aCall[0] Or Not $__g_vEnum[0][0] Then
+		$__g_vEnum = @error + 10
+	EndIf
+	DllCallbackFree($hEnumProc)
+	If $__g_vEnum Then Return SetError($__g_vEnum, 0, 0)
+
+	__Inc($__g_vEnum, -1)
+	Return $__g_vEnum
+EndFunc   ;==>_WinAPI_EnumDisplayMonitors
+
+; #FUNCTION# ====================================================================================================================
+; Author.........: Yashied
+; Modified.......: BiatuAutMiahn, jpm
+; ===============================================================================================================================
+Func __WinAPI_GetMonitorInfo($hMonitor)
+	Local $tMIEX = DllStructCreate('dword;long[4];long[4];dword;wchar[32]')
+	DllStructSetData($tMIEX, 1, DllStructGetSize($tMIEX))
+
+	Local $aCall = DllCall($gDll_hUser32, 'bool', 'GetMonitorInfoW', 'handle', $hMonitor, 'struct*', $tMIEX)
+	If @error Or Not $aCall[0] Then Return SetError(@error + 10, @extended, 0)
+
+	Local $aRet[4]
+	For $i = 0 To 1
+		$aRet[$i] = DllStructCreate($tagRECT)
+		__WinAPI_MoveMemory($aRet[$i], DllStructGetPtr($tMIEX, $i + 2), 16)
+		; Return SetError(@error + 10, @extended, 0) ; cannot really occur
+		; EndIf
+	Next
+	$aRet[3] = DllStructGetData($tMIEX, 5)
+	Switch DllStructGetData($tMIEX, 4)
+		Case 1 ; MONITORINFOF_PRIMARY
+			$aRet[2] = 1
+		Case Else
+			$aRet[2] = 0
+	EndSwitch
+	Return $aRet
+EndFunc   ;==>_WinAPI_GetMonitorInfo
+
+; #FUNCTION# ====================================================================================================================
+; Author.........: Yashied
+; Modified.......: BiatuAutMiahn, JPM
+; ===============================================================================================================================
+Func __WinAPI_MoveMemory($pDestination, $pSource, $iLength)
+	If __WinAPI_IsBadReadPtr($pSource, $iLength) Then Return SetError(10, @extended, 0)
+	If __WinAPI_IsBadWritePtr($pDestination, $iLength) Then Return SetError(11, @extended, 0)
+
+	DllCall($gDll_hNTDll, 'none', 'RtlMoveMemory', 'struct*', $pDestination, 'struct*', $pSource, 'ulong_ptr', $iLength)
+	If @error Then Return SetError(@error, @extended, 0)
+
+	Return 1
+EndFunc   ;==>_WinAPI_MoveMemory
+
+; #FUNCTION# ====================================================================================================================
+; Author.........: Yashied
+; Modified.......: BiatuAutMiahn, jpm
+; ===============================================================================================================================
+Func __WinAPI_IsBadReadPtr($pAddress, $iLength)
+	Local $aCall = DllCall($gDll_hKernel32, 'bool', 'IsBadReadPtr', 'struct*', $pAddress, 'uint_ptr', $iLength)
+	If @error Then Return SetError(@error, @extended, False)
+
+	Return $aCall[0]
+EndFunc   ;==>_WinAPI_IsBadReadPtr
+
+; #FUNCTION# ====================================================================================================================
+; Author.........: Yashied
+; Modified.......: BiatuAutMiahn, jpm
+; ===============================================================================================================================
+Func __WinAPI_IsBadWritePtr($pAddress, $iLength)
+	Local $aCall = DllCall($gDll_hKernel32, 'bool', 'IsBadWritePtr', 'struct*', $pAddress, 'uint_ptr', $iLength)
+	If @error Then Return SetError(@error, @extended, False)
+
+	Return $aCall[0]
+EndFunc   ;==>_WinAPI_IsBadWritePtr

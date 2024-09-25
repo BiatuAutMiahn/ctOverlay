@@ -4,7 +4,7 @@
 #AutoIt3Wrapper_UseUpx=n
 #AutoIt3Wrapper_Res_Description=Corsica Overlay
 #AutoIt3Wrapper_Res_ProductName=
-#AutoIt3Wrapper_Res_Fileversion=1.2408.2115.5227
+#AutoIt3Wrapper_Res_Fileversion=1.2409.2515.1225
 #AutoIt3Wrapper_Res_Fileversion_AutoIncrement=y
 #AutoIt3Wrapper_Res_Fileversion_First_Increment=y
 #AutoIt3Wrapper_Run_After=echo %fileversion%>..\VERSION.rc
@@ -19475,49 +19475,51 @@ Opt("TrayAutoPause", 0)
 Opt("TrayIconHide", 1)
 Opt("GUIOnEventMode",1)
 Global Const $sAlias="ctOverlay"
-Global Const $VERSION = "1.2408.2115.5227"
+Global Const $VERSION = "1.2409.2515.1225"
 Global $sTitle=$sAlias&" v"&$VERSION
 Global Const $MA_NOACTIVATE = 3
 Global Const $MA_NOACTIVATEANDEAT = 4
-Global $sDllUser32=DllOpen("User32.dll")
-Global $g_dll_hShCore = DllOpen("Shcore.dll")
+Global $gDll_hKernel32=DllOpen("Kernel32.dll")
+Global $gDll_hNTDll=DllOpen("NTDll.dll")
+Global $gDll_hUser32=DllOpen("User32.dll")
+Global $gDll_hShCore = DllOpen("Shcore.dll")
 Global $g_sDataDir=@LocalAppDataDir&"\InfinitySys\ctOverlay"
 Global $gsConfig=$g_sDataDir&"\ctOverlay.ini"
+FileDelete($gsConfig)
 Global $gCtxMain
-Global $gidClipMenuPin, $gidClipSendMacro, $gidClipSendRaw, $gidCtxDismiss, $gidCtxExit, $aClipAct, $gidClipMenuUnpin, $gidCtxClipActions
-Global $gidMainSepA, $gidMainSepB, $gidMainSepC, $idClipMenuSep, $gidClipMenu, $gidClipSend, $gidClipCall, $gidClip, $gidClipMenuSep
-Global $gidClipUrl
-Global $gidMacros, $gidMacroAdSync, $gidMacroCust, $gidMacroCust2
-Global $gidClipTikToClip, $gidClipTikOpen
+Global $aCtxMenu[1][5]
+$aCtxMenu[0][0]=0
+_InitDefMenu()
 Global $sClipAct, $gsTooltip, $ghToolTip, $ghCtxMain
 Global $aDisplays, $aMousePos[4], $aMon[4]
 Global $aPins[0][2]
 Global $aMenu[0]
 Local $iLeftLast,$iTopLast
 Global $hSelfLib, $hGraphics, $hBitmap, $hContext, $hHBitmap, $hBrushBl, $hBrushGr, $hBrushRd, $hBrushBk, $hIcon, $hHBitmap
-Global $sAppDir=@LocalAppDataDir&"\InfinitySys\cwOverlay.log"
-Global $sLog=$sAppDir&"\cwOverlay.log"
+Global $g_sLog=$g_sDataDir&"\cwOverlay.log"
+FileClose(FileOpen($g_sLog,2))
 _WinAPI_SetProcessDpiAwarenessContext($DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2)
-Global $iDpiScale=1.5
-Global $iDpiNoScale=_WinAPI_GetDpiForPrimaryMonitor()/96
-Global $iDpi=$iDpiNoScale*$iDpiScale
-ConsoleWrite($iDpi&@CRLF)
+Global $iDpiLast,$iDpiScale=1.5
+Global $aMonitors=_GetMonInfo()
+Global $iPriMon=$aMonitors[0][1]
+Global $iMonLast=-1
+Global $iDpiNoScale=$aMonitors[$iPriMon][5]/96
+Global $iDpi=1.0
+_Log(StringFormat("[a] iDpiScale:%0.3f, iDpiNoScale:%0.3f, iDpi:%0.3f",$iDpiScale,$iDpiNoScale,$iDpi))
 Local $iSizeIco, $iMargin, $iWidth, $iHeight, $iRight, $iTop
 _gfxRecalc()
 Global $hGUI
 $iLeft=@DesktopWidth-$iRight
-getMonInfo()
-_loadPins()
 initUI()
-While Sleep(1)
+While Sleep(125)
 WEnd
 _gfxDispose()
 _GDIPlus_Shutdown()
 GUIDelete($hGUI)
 Func _Log($sLine)
-If Not FileExists($sAppDir) Then DirCreate($sAppDir)
-If FileGetSize($sLog)>1024*1024 Then FileDelete($sLog)
-FileWriteLine($sLog,$sLine)
+If Not FileExists($g_sDataDir) Then DirCreate($g_sDataDir)
+If FileGetSize($g_sLog)>1024*1024 Then FileDelete($g_sLog)
+FileWriteLine($g_sLog,$sLine)
 ConsoleWrite($sLine&@CRLF)
 EndFunc
 Func _gfxRecalc()
@@ -19527,6 +19529,7 @@ $iWidth=$iSizeIco+($iMargin*2)
 $iHeight=$iMargin+$iSizeIco+$iMargin
 $iRight=$iWidth
 $iTop=18*$iDpi
+_Log(StringFormat("[b] iDpi:%0.3f, iSizeIco:%d, iWidth:%d, iHeight:%d, iRight:%d, iTop:%d",$iDpi,$iSizeIco,$iWidth,$iHeight,$iRight,$iTop))
 EndFunc
 Func _gfxInit()
 If @Compiled Then
@@ -19561,7 +19564,9 @@ _GDIPlus_GraphicsDispose($hContext)
 _GDIPlus_BitmapDispose($hBitmap)
 EndFunc
 Func _gfxDraw()
-$hBitmapIcon=_GDIPlus_ImageResize($hIcon,$iSizeIco*$iDpiNoScale,$iSizeIco*$iDpiNoScale)
+$hBitmapIcon=_GDIPlus_ImageResize($hIcon,$iSizeIco,$iSizeIco)
+_GDIPlus_BitmapSetResolution($hBitmapIcon,96,96)
+_Log(StringFormat("[c] iDpi:%0.3f, iSizeIco:%d, iDpiNoScale:%0.3f, iSizeIco*iDpiNoScale:%0.3f, 24*iDpiNoScale:%f",$iDpi,$iSizeIco,$iDpiNoScale,$iSizeIco*$iDpiNoScale,24*$iDpiNoScale))
 $hBitmap=_GDIPlus_BitmapCreateFromGraphics($iWidth, $iHeight, $hGraphics)
 $hContextIcon=_GDIPlus_ImageGetGraphicsContext($hBitmapIcon)
 $hContext=_GDIPlus_ImageGetGraphicsContext($hBitmap)
@@ -19576,12 +19581,8 @@ _GDIPlus_GraphicsSetPixelOffsetMode($hGraphics,$GDIP_PIXELOFFSETMODE_HIGHQUALITY
 _GDIPlus_GraphicsFillEllipse($hContext, 0, 0, $iMargin+$iSizeIco+$iMargin, $iMargin+$iSizeIco+$iMargin, $hBrushBk)
 _GDIPlus_GraphicsFillRect($hContext, $iMargin+($iSizeIco/2), 0, $iWidth-$iMargin-($iSizeIco/2), $iMargin+$iSizeIco+$iMargin, $hBrushBk)
 $iIcoHeight=_GDIPlus_ImageGetHeight($hBitmapIcon)
-_Log($iIcoHeight)
-_Log($iSizeIco)
-_Log($iDpiNoScale)
-_Log($iDpi)
-_Log($iDpiScale)
-_Log('')
+_Log(StringFormat("[d] iIcoHeight:%d, iMargin:%d",$iIcoHeight,$iMargin))
+_GDIPlus_GraphicsFillEllipse($hContext, $iMargin, $iMargin, $iSizeIco, $iSizeIco, $hBrushRd)
 _GDIPlus_GraphicsDrawImage($hContext, $hBitmapIcon, $iMargin, $iMargin)
 $hHBitmap=_GDIPlus_BitmapCreateHBITMAPFromBitmap($hBitmap)
 EndFunc
@@ -19603,7 +19604,8 @@ GUIRegisterMsg($WM_NCHITTEST, 'WM_NCHITTEST')
 GUIRegisterMsg($WM_SYSCOMMAND, "WM_SYSCOMMAND")
 GUIRegisterMsg($WM_MOUSEACTIVATE, 'WM_EVENTS')
 GUIRegisterMsg($WM_DISPLAYCHANGE, "onDisplayChange")
-AdlibRegister('posTrack',64)
+AdlibRegister("_watchDisplay",250)
+AdlibRegister('posTrackCall',64)
 GUISetState(@SW_SHOWNOACTIVATE, $hGUI)
 _WinAPI_UpdateLayeredWindowEx($hGUI, -1, -1, $hHBitmap,0xBB)
 EndFunc
@@ -19613,6 +19615,7 @@ Local $aPos=GUIGetCursorInfo($hGui)
 If Pixel_Distance($aPos[0],$aPos[1],$iMargin+($iSizeIco/2),$iMargin+($iSizeIco/2))<=($iSizeIco/2) Then
 Local $iX=$iMargin+($iSizeIco/2)
 Local $iY=$iX
+GUISetState(@SW_SHOWNOACTIVATE, $hGUI)
 AdlibRegister("_ctxEvent")
 EndIf
 Return $MA_NOACTIVATEANDEAT
@@ -19636,13 +19639,13 @@ Send('powershell -ExecutionPolicy Bypass -Command "iex (iwr -useb '&"'https://au
 EndFunc
 Func _ctxMacroCustom()
 If Not waitForIt() Then Return
-Send(_ProcMacro('Hello {@clip}, please give us a call at your earliest convenience, thanks. 855.411.3387.'),0)
+Send(_ProcMacro('Hello {@clip}, please give us a call at your earliest convenience, thanks. 855.411.3387'),0)
 EndFunc
 Func _ctxMacroCustom2()
 If Not waitForIt() Then Return
-Send(_ProcMacro('{~!Time.Floor($iMin,5).Time2Str}{tab}{~!Time.Add($iMin,5).Ceil($iMin,5).Time2Str}'),0)
+Send(_ProcMacro('{~!Time.Floor($iMin,5).Time2Str}{tab}{~!Time.Add($iMin,5).Round($iMin,5).Time2Str}'),0)
 If Not waitForIt() Then Return
-Send(_ProcMacro('Hello {@clip}, please give us a call at your earliest convenience, thanks. 855.411.3387.'),0)
+Send(_ProcMacro('Hello {@clip}, please give us a call at your earliest convenience, thanks. 855.411.3387'),0)
 EndFunc
 Func _ctxClipMacro()
 Local $sClip=ClipGet()
@@ -19690,7 +19693,7 @@ If $iOp>1 Then $aParam=StringSplit($aOp[1],',')
 Switch $sFunc
 Case "Time"
 $iHour=@HOUR
-$sM='a'
+$sMeridiem='a'
 If $iHour>=12 Then
 $iHour-=12
 $sMeridiem="p"
@@ -19721,7 +19724,25 @@ $iVal=$aParam[1]+$aParam[2]
 _MacroInt($aRet,$sVar,$iVal)
 Case "Time2Str"
 _MacroSubst($aRet,$aParam)
+$iHour=_MacroInt($aRet,"iHour")
+$iMin=_MacroInt($aRet,"iMin")
+$sMeridiem=_MacroInt($aRet,"sMeridiem")
+If $iMin>59 Then
+$iMin=0
+$iHour+=1
+$sMeridiem='a'
+If $iHour>=12 Then
+$iHour-=12
+$sMeridiem="p"
+EndIf
+If $iHour=0 Then $iHour=12
+EndIf
+$sMin=StringFormat
+If $iMin=0 Then
+$sString=StringReplace($sString,$sMatch,StringFormat("%d%s",_MacroInt($aRet,"iHour"),_MacroInt($aRet,"sMeridiem")))
+Else
 $sString=StringReplace($sString,$sMatch,StringFormat("%d%02d%s",_MacroInt($aRet,"iHour"),_MacroInt($aRet,"iMin"),_MacroInt($aRet,"sMeridiem")))
+EndIf
 EndSwitch
 Next
 WEnd
@@ -19766,9 +19787,8 @@ Next
 SetError(1,0,0)
 EndFunc
 Func _ctxReload()
-_ClearMenuEvt()
-_DeleteCxt()
-_InitMenu()
+_destroyMenu($aCtxMenu, $gCtxMain)
+_InitMenu2($aCtxMenu, $gCtxMain)
 EndFunc
 Func _ctxExit()
 Exit 0
@@ -19813,7 +19833,7 @@ ReDim $aNew[$iMax+1][2]
 $aNew[$iMax][0]=$aPins[$i][0]
 Next
 If $bMod Then
-_DeleteCxt()
+_destroyMenu($aCtxMenu, $gCtxMain)
 $aPins=$aNew
 _savePins()
 EndIf
@@ -19831,125 +19851,83 @@ $gsTooltip=$sTip
 _ToolTip($gsTooltip)
 AdlibRegister("_TipProc",8)
 EndFunc
-Func _InitMenu()
-Local $sClip=StringStripWS(ClipGet(),3)
-$gidClip = GUICtrlCreateMenu("Clip", $gCtxMain)
-_GUICtrlMenu_SetMenuStyle(GUICtrlGetHandle($gidClip),$MNS_NOCHECK)
-$gidClipSend = GUICtrlCreateMenu("Send", $gidClip)
-_GUICtrlMenu_SetMenuStyle(GUICtrlGetHandle($gidClipSend),$MNS_NOCHECK)
-$gidClipSendMacro = GUICtrlCreateMenuItem("/w Macros", $gidClipSend)
-$gidClipSendRaw = GUICtrlCreateMenuItem("Raw", $gidClipSend)
-GUICtrlCreateMenuItem("", $gidClip)
-$gidClipTik = GUICtrlCreateMenu("AsTicket", $gidClip)
-_GUICtrlMenu_SetMenuStyle(GUICtrlGetHandle($gidClipTik),$MNS_NOCHECK)
-$gidClipTikOpen = GUICtrlCreateMenuItem("Open", $gidClipTik)
-$gidClipTikToClip = GUICtrlCreateMenuItem("Clip2Url", $gidClipTik)
-If StringRegExp($sClip,"^(\+\d{1,2}\s?)?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}$") Then
-$sClip=StringRegExpReplace($sClip,".*\(?(\d{3})\)?[\s.-]?(\d{3})[\s.-]?(\d{4})$","$1.$2.$3")
-$sClipAct=$sClip
-GUICtrlCreateMenuItem("", $gidClip)
-$gidClipCall=GUICtrlCreateMenuItem("Call "&$sClip, $gidClip)
+Func _MenuAdd(ByRef $aMenu,$iType,$sAlias=Null,$vActPar=Null)
+$iMax=UBound($aMenu,1)
+$iMaxY=UBound($aMenu,2)
+ReDim $aMenu[$iMax+1][$iMaxY]
+$aMenu[$iMax][0]=$iType
+$aMenu[$iMax][1]=$sAlias
+$aMenu[$iMax][2]=$vActPar
+$aMenu[0][0]=$iMax
+EndFunc
+Func _InitDefMenu()
+Local $aCtxMacros[1][5]
+$aCtxMacros[0][0]=0
+Local $aCtxPins[1][5]
+$aCtxPins[0][0]=0
+Local $aCtxClipSend[1][5]
+_MenuAdd($aCtxClipSend,1,'/w Macros','_ctxClipMacro')
+_MenuAdd($aCtxClipSend,1,'Raw','_ctxClipRaw')
+Local $aCtxClipTik[1][5]
+_MenuAdd($aCtxClipTik,1,'Open','_ctxClipTikOpen')
+_MenuAdd($aCtxClipTik,1,'mkUrl','_ctxClipTikClip')
+Local $aCtxClip[1][5]
+_MenuAdd($aCtxClip,2,'Send',$aCtxClipSend)
+_MenuAdd($aCtxClip,2,'AsTicket',$aCtxClipTik)
+_MenuAdd($aCtxMenu,2,'Clip',$aCtxClip)
+_MenuAdd($aCtxMenu,0)
+_MenuAdd($aCtxMenu,1,'Dismiss','_ctxReload')
+_MenuAdd($aCtxMenu,1,'Exit','_ctxExit')
+EndFunc
+Func _InitMenu2(ByRef $aMenu, $idParent)
+Local $idCtrl,$hCtrl,$sAlias,$iType,$vActPar
+For $i=1 To $aMenu[0][0]
+$iType=$aMenu[$i][0]
+$sAlias=$aMenu[$i][1]
+$vActPar=$aMenu[$i][2]
+Switch $iType
+Case 0
+$idCtrl=GUICtrlCreateMenuItem('', $idParent)
+Case 1
+$idCtrl=GUICtrlCreateMenuItem($sAlias, $idParent)
+GUICtrlSetOnEvent($idCtrl,$vActPar)
+Case 2
+$idCtrl=GUICtrlCreateMenu($sAlias, $idParent)
+EndSwitch
+$hCtrl=GUICtrlGetHandle($idCtrl)
+If $iType=2 Then
+_GUICtrlMenu_SetMenuStyle($hCtrl,$MNS_NOCHECK+$MNS_AUTODISMISS)
+_InitMenu2($vActPar,$idCtrl)
 EndIf
-$gidMainSepA=GUICtrlCreateMenuItem("", $gCtxMain)
-$gidMacros = GUICtrlCreateMenu("Macros", $gCtxMain)
-_GUICtrlMenu_SetMenuStyle(GUICtrlGetHandle($gidMacros),$MNS_NOCHECK)
-$gidMacroAdSync = GUICtrlCreateMenuItem("doAdSync", $gidMacros)
-$gidMacroCust = GUICtrlCreateMenuItem("_dev", $gidMacros)
-$gidMacroCust2 = GUICtrlCreateMenuItem("_dev2", $gidMacros)
-$gidMainSepB=GUICtrlCreateMenuItem("", $gCtxMain)
-_ArrayNaturalSort($aPins)
-If UBound($aPins,1) Then
-For $z=0 To UBound($aPins,1)-1
-If $aPins[$z][0]=="" Then ContinueLoop
-Local $aTemp=_GenCtx($aPins[$z][0],$gCtxMain)
-$aPins[$z][1]=$aTemp
+$aMenu[$i][3]=$idCtrl
+$aMenu[$i][4]=$hCtrl
 Next
-$gidMainSepC=GUICtrlCreateMenuItem("", $gCtxMain)
+EndFunc
+Func _destroyMenu(ByRef $aMenu, $idParent)
+Local $idCtrl
+For $i=1 To $aMenu[0][0]
+$idCtrl=$aMenu[$i][3]
+If $aMenu[$i][0]=2 Then
+ConsoleWrite($aMenu[$i][0]&','&$aMenu[$i][1]&','&$aMenu[$i][3]&@CRLF)
+_destroyMenu($aMenu[$i][2],$idCtrl)
+Else
+GUICtrlSetOnEvent($idCtrl,"")
 EndIf
-$gidCtxDismiss = GUICtrlCreateMenuItem("Dismiss", $gCtxMain)
-$gidCtxExit = GUICtrlCreateMenuItem("Exit", $gCtxMain)
-_SetMenuEvt()
-EndFunc
-Func _GenCtx($sItem,$idMenu)
-Local $aRet[1]
-Local $sLow=StringLower($sItem)
-$aRet[0]=GUICtrlCreateMenu($sLow,$idMenu)
-_GUICtrlMenu_SetMenuStyle(GUICtrlGetHandle($aRet[0]),$MNS_NOCHECK)
-Local $iLast
-$iMax=UBound($aRet,1)
-ReDim $aRet[$iMax+1]
-$aRet[$iMax]=GUICtrlCreateMenuItem("UnPin", $aRet[0])
-Return $aRet
-EndFunc
-Func _SetMenuEvt()
-For $z=0 To UBound($aPins,1)-1
-$aTemp=$aPins[$z][1]
-GUICtrlSetOnEvent($aTemp[2],"_ctxClipPut")
-GUICtrlSetOnEvent($aTemp[4],"_ctxClipMacro")
-GUICtrlSetOnEvent($aTemp[5],"_ctxClipRaw")
-$iMax=UBound($aTemp,1)-1
-GUICtrlSetOnEvent($aTemp[$iMax],"_ctxClipUnpin")
+ConsoleWrite($idCtrl&@CRLF)
+GUICtrlDelete($idCtrl)
 Next
-GUICtrlSetOnEvent($gidClipMenuPin,"_ctxClipPin")
-GUICtrlSetOnEvent($gidClipSendMacro,"_ctxClipMacro")
-GUICtrlSetOnEvent($gidClipSendRaw,"_ctxClipRaw")
-GUICtrlSetOnEvent($gidClipCall,"_ctxClipCall")
-GUICtrlSetOnEvent($gidClipTikOpen,"_ctxClipTikOpen")
-GUICtrlSetOnEvent($gidClipTikToClip,"_ctxClipTikClip")
-GUICtrlSetOnEvent($gidMacroAdSync,"_ctxMacroAdSync")
-GUICtrlSetOnEvent($gidMacroCust,"_ctxMacroCustom")
-GUICtrlSetOnEvent($gidMacroCust2,"_ctxMacroCustom2")
-GUICtrlSetOnEvent($gidCtxDismiss,"_ctxReload")
-GUICtrlSetOnEvent($gidCtxExit,"_ctxExit")
-EndFunc
-Func _ClearMenuEvt()
-For $i=1 To UBound($aClipAct,1)-1
-GUICtrlSetOnEvent($aClipAct[$i],"")
-Next
-For $z=0 To UBound($aPins,1)-1
-$aTemp=$aPins[$z][1]
-For $y=1 To UBound($aTemp,1)-1
-GUICtrlSetOnEvent($aTemp[$y],"")
-Next
-Next
-GUICtrlSetOnEvent($gidMacroCust,"")
-GUICtrlSetOnEvent($gidMacroCust2,"")
-GUICtrlSetOnEvent($gidMacroAdSync,"")
-GUICtrlSetOnEvent($gidClipMenuPin,"")
-GUICtrlSetOnEvent($gidClipMenuUnpin,"")
-GUICtrlSetOnEvent($gidCtxClipActions,"")
-GUICtrlSetOnEvent($gidClipSendMacro,"")
-GUICtrlSetOnEvent($gidClipSendRaw,"")
-GUICtrlSetOnEvent($gidClipCall,"")
-GUICtrlSetOnEvent($gidCtxDismiss,"")
-GUICtrlSetOnEvent($gidCtxExit,"")
-EndFunc
-Func _DeleteCxt()
-_ClearMenuEvt()
-GUICtrlDelete($gidCtxExit)
-GUICtrlDelete($gidCtxDismiss)
-GUICtrlDelete($gidMainSepA)
-For $z=0 To UBound($aPins,1)-1
-Local $aTemp=$aPins[$z][1]
-For $y=UBound($aTemp,1)-1 To 0 Step -1
-GUICtrlDelete($aTemp[$y])
-Next
-Next
-GUICtrlDelete($gidMainSepB)
-GUICtrlDelete($gidClip)
-GUICtrlDelete($gidMacros)
 EndFunc
 Func waitForIt()
 Local $bAbort=False
 Do
 _ToolTip("Click Left: Send, Right: Abort")
 Sleep(10)
-If _IsPressed("02", $sDllUser32) Then
+If _IsPressed("02", $gDll_hUser32) Then
 _ToolTip("")
 Sleep(250)
 Return False
 EndIf
-Until _IsPressed("01", $sDllUser32)
+Until _IsPressed("01", $gDll_hUser32)
 _ToolTip("")
 Sleep(250)
 Return True
@@ -20019,8 +19997,13 @@ EndIf
 EndFunc
 Func onDisplayChange($hWnd, $nMsgID, $wParam, $lParam)
 ConsoleWrite('Resolution changed to "' & @DesktopWidth & 'x' & @DesktopHeight & '".'&@CRLF)
-getMonInfo()
-posTrack()
+_Log(StringFormat('DisplayChange:%dx%d',@DesktopWidth,@DesktopHeight))
+$aMonitors=_GetMonInfo()
+For $i=1 To $aMonitors[0][0]
+_Log(StringFormat("onDisplayChange:iMonDpi=%f,%f",$i,$aMonitors[$i][5]))
+Next
+Local $iRet=posTrack(1)
+_Log(StringFormat("onDisplayChange:PosTrack=%d,%d,%d",$iRet,@error,@extended))
 Return $GUI_RUNDEFMSG
 EndFunc
 Func getMonInfo()
@@ -20051,36 +20034,47 @@ $aDisplays[$i][16]=$aDPI[1]
 EndIf
 Next
 EndFunc
-Func posTrack()
+Func posTrackCall()
+posTrack()
+EndFunc
+Func posTrack($bForce=0)
+If Not $bForce And _isWindowsLocked() Then Return SetError(1,0,0)
+GUISetState(@SW_SHOWNOACTIVATE, $hGUI)
 Local $iTimer=TimerInit()
 Local $iMon=-1, $tPos = _WinAPI_GetMousePos()
 $aMousePos[0]=DllStructGetData($tPos,1)
 $aMousePos[2]=DllStructGetData($tPos,2)
-If $aMousePos[0]<>$aMousePos[1] Or $aMousePos[2]<>$aMousePos[3] Then
+If Not $bForce And ($aMousePos[0]=$aMousePos[1] Or $aMousePos[2]=$aMousePos[3]) Then Return SetError(1,1,0)
 $aMousePos[1]=$aMousePos[0]
 $aMousePos[3]=$aMousePos[2]
 Local $hMon=_WinAPI_MonitorFromPoint($tPos)
-If @error Then return
-For $i=1 To UBound($aDisplays,1)-1
-If $aDisplays[$i][0]==$hMon Then
+If @error Then return SetError(1,2,0)
+For $i=1 To UBound($aMonitors,1)-1
+If $aMonitors[$i][0]==$hMon Then
 $iMon=$i
-$iDpiNoScale=$aDisplays[$i][15]/96
-$iDpi=$iDpiNoScale*$iDpiScale
 ExitLoop
 EndIf
 Next
-If $iMon=-1 Then Return SetError(1,0,False)
+If $iMon=-1 Or $iMon="" Then
+$aMonitors=_GetMonInfo()
+posTrack(1)
+Return SetError(1,3,False)
+EndIf
+If Not $bForce And $iMonLast=$iMon Then Return SetError(0,4,1)
+_Log(StringFormat("iMon:%d",$iMon))
+$iDpiNoScale=$aMonitors[$i][5]/96
+$iDpi=$iDpiNoScale*$iDpiScale
+_Log(StringFormat("[a:a] iDpiScale:%0.3f, iDpiNoScale:%0.3f, iDpi:%0.3f",$iDpiScale,$iDpiNoScale,$iDpi))
+$iMonLast=$iMon
 _gfxRecalc()
-$iRight=$iWidth
-$iTop=18*$iDpi
-$iLeft=$aDisplays[$iMon][1]+$aDisplays[$iMon][3]-$iRight
-$iTop=$aDisplays[$iMon][2]+$iTop
-If $iLeft<>$iLeftLast Or $iTop<>$iTopLast Then
-If _isWindowsLocked() Then Return
+$aPos=_WinAPI_GetPosFromRect($aMonitors[$iMon][2])
+$iLeft=$aPos[0]+$aPos[2]-$iRight
+$iTop=$aPos[1]+$iTop
+If $bForce Or ($iLeft<>$iLeftLast Or $iTop<>$iTopLast) Then
 $iLeftLast=$iLeft
 $iTopLast=$iTop
 $aPos=WinGetPos($hGui)
-If $aPos[0]<>$iLeft Or $aPos[1]<>$iTop Then
+If $bForce Or ($aPos[0]<>$iLeft Or $aPos[1]<>$iTop) Then
 GUISetState(@SW_HIDE, $hGui)
 _gfxReload()
 WinMove($hGui,"",$iLeft,$iTop)
@@ -20088,7 +20082,7 @@ _WinAPI_SetProcessDpiAwarenessContext($DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V
 EndIf
 GUISetState(@SW_SHOWNOACTIVATE, $hGui)
 EndIf
-EndIf
+Return SetError(0,5,0)
 EndFunc
 Func ShowMenu($hWnd, $nContextID, $X, $Y, $iMouse=0)
 Local $hMenu = GUICtrlGetHandle($nContextID)
@@ -20110,22 +20104,23 @@ $stPoint = 0
 EndFunc
 Func _WinAPI_GetDpiForMonitor($hMonitor, $dpiType)
 Local $X, $Y
-$aRet = DllCall($g_dll_hShCore, "long", "GetDpiForMonitor", "long", $hMonitor, "int", $dpiType, "uint*", $X, "uint*", $Y)
+$aRet = DllCall($gDll_hShCore, "long", "GetDpiForMonitor", "long", $hMonitor, "int", $dpiType, "uint*", $X, "uint*", $Y)
 If @error Or Not IsArray($aRet) Then Return SetError(1, 0, 0)
 Local $aDPI[2] = [$aRet[3],$aRet[4]]
 Return $aDPI
 EndFunc
 Func _watchDisplay()
+GUISetState(@SW_SHOWNOACTIVATE, $hGui)
 EndFunc
 Func _ctxEvent()
 AdlibUnRegister("_ctxEvent")
-_DeleteCxt()
-_InitMenu()
+_destroyMenu($aCtxMenu, $gCtxMain)
+_InitMenu2($aCtxMenu, $gCtxMain)
 ShowMenu($hGui, $gCtxMain, ($iSizeIco/2)-$iMargin, $iMargin+($iSizeIco/2))
 EndFunc
 Func _ctxEventMPos()
-_DeleteCxt()
-_InitMenu()
+_destroyMenu($aCtxMenu, $gCtxMain)
+_InitMenu2($aCtxMenu, $gCtxMain)
 $aPos=MouseGetPos()
 ShowMenu($hGui, $gCtxMain,0,0,1)
 EndFunc
@@ -20143,23 +20138,6 @@ EndFunc
 Func _isWindowsLocked()
 If _WinAPI_OpenInputDesktop() Then Return False
 Return True
-EndFunc
-Func _mgrMacro()
-$Form1 = GUICreate("Form1", 249, 270, 281, 193, -1, BitOR($WS_EX_TOOLWINDOW,$WS_EX_WINDOWEDGE))
-$Input1 = GUICtrlCreateInput("Title", 8, 8, 233, 21)
-$Edit1 = GUICtrlCreateEdit("", 8, 32, 233, 201)
-GUICtrlSetData(-1, "Edit1")
-$Button1 = GUICtrlCreateButton("Button1", 8, 240, 75, 25)
-$Button2 = GUICtrlCreateButton("Button2", 88, 240, 75, 25)
-$Button3 = GUICtrlCreateButton("Button3", 168, 240, 75, 25)
-GUISetState(@SW_SHOW)
-While 1
-$nMsg = GUIGetMsg()
-Switch $nMsg
-Case $GUI_EVENT_CLOSE
-Exit
-EndSwitch
-WEnd
 EndFunc
 Func _MacroSubst(ByRef $aArrA, ByRef $aArrB)
 Local $vVar
@@ -20190,4 +20168,76 @@ $iVar=$iMax
 EndIf
 $aArray[$iVar][0]=$sField
 $aArray[$iVar][1]=$vVal
+EndFunc
+Func _GetMonInfo()
+Local $iDimY=6
+Local $aRet[1][$iDimY],$aMon=__WinAPI_EnumDisplayMonitors()
+If @error Or Not IsArray($aMon) Then Return SetError(1, 0, 0)
+For $i = 1 To $aMon[0][0]
+Local $iMax=UBound($aRet,1)
+ReDim $aRet[$iMax+1][$iDimY]
+$aRet[$iMax][0]=$aMon[$i][0]
+Local $aInfo=__WinAPI_GetMonitorInfo($aMon[$i][0])
+If @error Or Not IsArray($aInfo) Then
+$aRet[$iMax][1]=@Error
+ContinueLoop
+EndIf
+For $j=1 To 4
+$aRet[$iMax][$j]=$aInfo[$j-1]
+Next
+If $aInfo[2] Then $aRet[0][1]=$i
+Local $tX=DllStructCreate("int dpiX"), $tY = DllStructCreate("int dpiY")
+Local $aDpiInfo=DllCall($gDll_hShCore, "long", "GetDpiForMonitor", "handle", $aMon[$i][0], "long", $MDT_DEFAULT, "struct*", $tX, "struct*", $tY)
+$aRet[$iMax][5]=$tX.dpiX
+Next
+$aRet[0][0]=$iMax
+Return SetError(0,0,$aRet)
+EndFunc
+Func __WinAPI_EnumDisplayMonitors($hDC = 0, $tRECT = 0)
+Local $hEnumProc = DllCallbackRegister('__EnumDisplayMonitorsProc', 'bool', 'handle;handle;ptr;lparam')
+Dim $__g_vEnum[101][2] = [[0]]
+Local $aCall = DllCall($gDll_hUser32, 'bool', 'EnumDisplayMonitors', 'handle', $hDC, 'struct*', $tRECT, 'ptr', DllCallbackGetPtr($hEnumProc), 'lparam', 0)
+If @error Or Not $aCall[0] Or Not $__g_vEnum[0][0] Then
+$__g_vEnum = @error + 10
+EndIf
+DllCallbackFree($hEnumProc)
+If $__g_vEnum Then Return SetError($__g_vEnum, 0, 0)
+__Inc($__g_vEnum, -1)
+Return $__g_vEnum
+EndFunc
+Func __WinAPI_GetMonitorInfo($hMonitor)
+Local $tMIEX = DllStructCreate('dword;long[4];long[4];dword;wchar[32]')
+DllStructSetData($tMIEX, 1, DllStructGetSize($tMIEX))
+Local $aCall = DllCall($gDll_hUser32, 'bool', 'GetMonitorInfoW', 'handle', $hMonitor, 'struct*', $tMIEX)
+If @error Or Not $aCall[0] Then Return SetError(@error + 10, @extended, 0)
+Local $aRet[4]
+For $i = 0 To 1
+$aRet[$i] = DllStructCreate($tagRECT)
+__WinAPI_MoveMemory($aRet[$i], DllStructGetPtr($tMIEX, $i + 2), 16)
+Next
+$aRet[3] = DllStructGetData($tMIEX, 5)
+Switch DllStructGetData($tMIEX, 4)
+Case 1
+$aRet[2] = 1
+Case Else
+$aRet[2] = 0
+EndSwitch
+Return $aRet
+EndFunc
+Func __WinAPI_MoveMemory($pDestination, $pSource, $iLength)
+If __WinAPI_IsBadReadPtr($pSource, $iLength) Then Return SetError(10, @extended, 0)
+If __WinAPI_IsBadWritePtr($pDestination, $iLength) Then Return SetError(11, @extended, 0)
+DllCall($gDll_hNTDll, 'none', 'RtlMoveMemory', 'struct*', $pDestination, 'struct*', $pSource, 'ulong_ptr', $iLength)
+If @error Then Return SetError(@error, @extended, 0)
+Return 1
+EndFunc
+Func __WinAPI_IsBadReadPtr($pAddress, $iLength)
+Local $aCall = DllCall($gDll_hKernel32, 'bool', 'IsBadReadPtr', 'struct*', $pAddress, 'uint_ptr', $iLength)
+If @error Then Return SetError(@error, @extended, False)
+Return $aCall[0]
+EndFunc
+Func __WinAPI_IsBadWritePtr($pAddress, $iLength)
+Local $aCall = DllCall($gDll_hKernel32, 'bool', 'IsBadWritePtr', 'struct*', $pAddress, 'uint_ptr', $iLength)
+If @error Then Return SetError(@error, @extended, False)
+Return $aCall[0]
 EndFunc
