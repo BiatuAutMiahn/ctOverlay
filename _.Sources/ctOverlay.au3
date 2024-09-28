@@ -5,7 +5,7 @@
 #AutoIt3Wrapper_UseUpx=n
 #AutoIt3Wrapper_Res_Description=Corsica Overlay
 #AutoIt3Wrapper_Res_ProductName=
-#AutoIt3Wrapper_Res_Fileversion=1.1.0.1000
+#AutoIt3Wrapper_Res_Fileversion=1.1.0.1001
 #AutoIt3Wrapper_Res_Fileversion_AutoIncrement=y
 #AutoIt3Wrapper_Res_Fileversion_First_Increment=y
 #AutoIt3Wrapper_Run_After=echo %fileversion%>..\VERSION.rc
@@ -55,7 +55,7 @@ Opt("TrayIconHide", 1)
 Opt("GUIOnEventMode",1)
 
 Global Const $sAlias="ctOverlay"
-Global Const $VERSION = "1.1.0.1000"
+Global Const $VERSION = "1.1.0.1001"
 Global $sTitle=$sAlias&" v"&$VERSION
 
 
@@ -191,7 +191,6 @@ Func _ProcMacro($sString,$isClip=0)
         $sTime=$iHour&$iMin&$sMeridiem
         $sString=StringReplace($sString,"{@TIME}",$sTime)
     EndIf
-
     $sString=StringReplace($sString,"{@clip}",StringStripWS(ClipGet(),3))
     ; Macro Interpreter
     While StringRegExp($sString,"{~!([^}]+)}")
@@ -264,7 +263,6 @@ Func _ProcMacro($sString,$isClip=0)
             EndSwitch
         Next
     WEnd
-
     For $i=1 To $gaAutMacros[0]
         If Not StringInStr($sString,"{@"&$gaAutMacros[$i]&"}") Then ContinueLoop
         $sString=StringReplace($sString,"{@"&$gaAutMacros[$i]&"}",Execute('@'&$gaAutMacros[$i]))
@@ -1180,9 +1178,16 @@ Func _MacroMgr_Main_Del()
     Next
     $aMacrosNew[0][0]=$iMax
     $aMacros=$aMacrosNew
+    GUIRegisterMsg($WM_NOTIFY, "")
+    GUIRegisterMsg($WM_COMMAND, "")
     _MacroMgr_Main_MacroLoad()
     _SaveMacros()
     _reloadMacroCtx()
+    GUIRegisterMsg($WM_NOTIFY, "_MacroMgr_Main_WM_NOTIFY")
+    GUIRegisterMsg($WM_COMMAND, "_MacroMgr_Main_WM_COMMAND")
+    GUICtrlSetData($gMacroMgr_idLabel,"")
+    GUICtrlSetData($gMacroMgr_idEdit,"")
+    _MacroMgr_Main_GuiState(1)
 EndFunc
 
 Func _MacroMgr_Main_Discard()
@@ -1203,6 +1208,7 @@ EndFunc
 Func _MacroMgr_Main_Test()
     Local $sMacro=GUICtrlRead($gMacroMgr_idEdit)
     If Not waitForIt() Then Return
+    ConsoleWrite(StringFormat(":%s:",$sMacro)&@CRLF)
     Send(_ProcMacro($sMacro),0)
 EndFunc
 
