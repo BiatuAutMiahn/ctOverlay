@@ -5,11 +5,10 @@
 #AutoIt3Wrapper_UseUpx=n
 #AutoIt3Wrapper_Res_Description=Corsica Overlay
 #AutoIt3Wrapper_Res_ProductName=
-#AutoIt3Wrapper_Res_Fileversion=1.2409.2515.1225
+#AutoIt3Wrapper_Res_Fileversion=1.1.0.1000
 #AutoIt3Wrapper_Res_Fileversion_AutoIncrement=y
 #AutoIt3Wrapper_Res_Fileversion_First_Increment=y
 #AutoIt3Wrapper_Run_After=echo %fileversion%>..\VERSION.rc
-#AutoIt3Wrapper_Res_Fileversion_Use_Template=1.%YY%MO.%DD%HH.%MI%SE
 #AutoIt3Wrapper_Res_Language=1033
 #AutoIt3Wrapper_Run_Au3Stripper=y
 #Au3Stripper_Parameters=/tl /debug /mo
@@ -22,6 +21,7 @@
  Author:         https://github.com/BiatuAutMiahn
  Source: https://github.com/BiatuAutMiahn/cwNotifyAu3
 
+Thanks to Melba23 for Toast GUI, modified for use with infOverlay
 #ce ----------------------------------------------------------------------------
 
 #include <WinAPISys.au3>
@@ -36,18 +36,26 @@
 #include <ButtonConstants.au3>
 #include <EditConstants.au3>
 #include <WinAPIGdi.au3>
+#include <StaticConstants.au3>
+#include <TreeViewConstants.au3>
+#include <GuiEdit.au3>
+#include <WinAPIDlg.au3>
+#include <Array.au3>
+#include <MsgBoxConstants.au3>
+#include <GuiTreeView.au3>
 
 #include "Includes\ResourcesEx.au3"
 #include "Includes\_WinAPI_DPI.au3"
 #include "Includes\ArrayNatSort.au3"
 #include "Includes\_ClipPutHTML.au3"
+#include "Includes\Base64.au3"
 
 Opt("TrayAutoPause", 0)
 Opt("TrayIconHide", 1)
 Opt("GUIOnEventMode",1)
 
 Global Const $sAlias="ctOverlay"
-Global Const $VERSION = "1.2409.2515.1225"
+Global Const $VERSION = "1.1.0.1000"
 Global $sTitle=$sAlias&" v"&$VERSION
 
 
@@ -61,11 +69,34 @@ Global $gDll_hShCore = DllOpen("Shcore.dll")
 
 Global $g_sDataDir=@LocalAppDataDir&"\InfinitySys\ctOverlay"
 Global $gsConfig=$g_sDataDir&"\ctOverlay.ini"
-FileDelete($gsConfig)
+;FileDelete($gsConfig)
 ;Global $gidAuthSep, $gidAuthAdd, $gidClip, $gidClipSend, $gidClipSendMacro, $gidClipSendRaw, $gidMainSepA, $gidMainSepB, $gidCtxDismiss, $gidCtxExit, $gCtxMain, $gidAuth, $gidCtxClipOpenSN
 ;Global $gidClipWatchMenu
 ;Global $gaRes, $gaResLast, $gidClipMenu, $gidClipMenuSep, $sClipAct
 ;Global $gidCtxClipPing, $gidCtxClipResolve, $gidCtxClipRemote, $gidCtxClipMgmt, $gidCtxClipCmd, $gidCtxClipActions, $gidCtxClipFixFw, $gidCtxClipExplore, $gidCtxClipReg, $gidClipMenuPin, $gidClipMenuUnpin
+
+;==> Macro Manager Vars
+Global $gMacroMgr_sTitle="Macro Manager"
+Global $gMacroMgr_iGuiW=512+32+5
+Global $gMacroMgr_iGuiH=331
+Global $gMacroMgr_iPaneAW=128+32
+Global $gMacroMgr_iBtnH=23
+Global $gMacroMgr_iBtnT=$gMacroMgr_iGuiH-28
+Global $gMacroMgr_iBtnW=($gMacroMgr_iPaneAW/4)-1
+Global $gMacroMgr_sPath=""
+Global $gMacroMgr_iSel=-1
+Global $gMacroMgr_idTreeRoot=-1
+Global $gMacroMgr_iGuiState
+Global $gMacroMgr_aTreeMap[1][6]
+Global $aMacros[1][3]
+$aMacros[0][0]=0
+_LoadMacros()
+;$aMacros[0][0]=1
+;$aMacros[1][0]=""
+;$aMacros[1][1]="c/b Tmpl"
+;$aMacros[1][2]='Hello {@clip}, please give us a call at your earliest convenience, thanks. 855.411.3387'
+;<==  Macro Manager Vars
+
 Global $gCtxMain
 ; iType, sAlias, (sCallback | aSubMenu), idCtrl, hCtrl
 Global $aCtxMenu[1][5]
@@ -113,148 +144,6 @@ Func _Log($sLine)
     ConsoleWrite($sLine&@CRLF)
 EndFunc
 
-Func _gfxRecalc()
-    $iMargin=2*$iDpi
-    $iSizeIco=16*$iDpi
-    $iWidth=$iSizeIco+($iMargin*2)
-    $iHeight=$iMargin+$iSizeIco+$iMargin
-    $iRight=$iWidth
-    $iTop=18*$iDpi
-    _Log(StringFormat("[b] iDpi:%0.3f, iSizeIco:%d, iWidth:%d, iHeight:%d, iRight:%d, iTop:%d",$iDpi,$iSizeIco,$iWidth,$iHeight,$iRight,$iTop))
-EndFunc
-
-Func _gfxInit()
-    If @Compiled Then
-        Local $hSelfLib = _WinAPI_LoadLibraryEx(Null,$LOAD_LIBRARY_AS_DATAFILE)
-        Local $hResource = _WinAPI_FindResource($hSelfLib,$RT_GROUP_ICON,1)
-        Local $hData = _WinAPI_LoadResource($hSelfLib, $hResource)
-        Local $pData = _WinAPI_LockResource($hData)
-        Local $iIcon = _WinAPI_LookupIconIdFromDirectoryEx($pData, 1, 2048, 2048)
-        Local $hResource = _WinAPI_FindResource($hSelfLib, $RT_ICON, $iIcon)
-        Local $iSize = _WinAPI_SizeOfResource($hSelfLib, $hResource)
-        $hData = _WinAPI_LoadResource($hSelfLib, $hResource)
-        $pData = _WinAPI_LockResource($hData)
-        $hIcon = _WinAPI_CreateIconFromResourceEx($pData,$iSize)
-    Else
-        $hIcon = _WinAPI_ShellExtractIcon(@ScriptDir&"\Res\ctdkgrrd.ico",0,2048,2048)
-    EndIf
-    $hIcon = _GDIPlus_BitmapCreateFromHICON32($hIcon)
-	$hGraphics = _GDIPlus_GraphicsCreateFromHWND($hGUI)
-	$hBrushBl = _GDIPlus_BrushCreateSolid(0xFFA0A0FF)
-	$hBrushGr = _GDIPlus_BrushCreateSolid(0xFFA0FFA0)
-	$hBrushRd = _GDIPlus_BrushCreateSolid(0xAAFFA0A0)
-    $hBrushBk = _GDIPlus_BrushCreateSolid(0xFFC0C0C0)
-EndFunc
-
-Func _gfxUninit()
-    _GDIPlus_BrushDispose($hBrushBl)
-    _GDIPlus_BrushDispose($hBrushGr)
-    _GDIPlus_BrushDispose($hBrushRd)
-    _GDIPlus_GraphicsDispose($hGraphics)
-EndFunc
-
-Func _gfxDispose()
-    _GDIPlus_GraphicsDispose($hContext)
-    _GDIPlus_BitmapDispose($hBitmap)
-EndFunc
-
-Func _gfxDraw()
-    ;$hTimer=TimerInit()
-    ;$hTimerA=TimerInit()
-    $hBitmapIcon=_GDIPlus_ImageResize($hIcon,$iSizeIco,$iSizeIco)
-    _GDIPlus_BitmapSetResolution($hBitmapIcon,96,96)
-    ;$hBitmapIcon=_GDIPlus_ImageScale($hIcon,$iSizeIco/2048,$iSizeIco/2048,$GDIP_INTERPOLATIONMODE_NEARESTNEIGHBOR)
-
-    _Log(StringFormat("[c] iDpi:%0.3f, iSizeIco:%d, iDpiNoScale:%0.3f, iSizeIco*iDpiNoScale:%0.3f, 24*iDpiNoScale:%f",$iDpi,$iSizeIco,$iDpiNoScale,$iSizeIco*$iDpiNoScale,24*$iDpiNoScale))
-
-    ;ConsoleWrite(TimerDiff($hTimerA)&@CRLF)
-    $hBitmap=_GDIPlus_BitmapCreateFromGraphics($iWidth, $iHeight, $hGraphics)
-    $hContextIcon=_GDIPlus_ImageGetGraphicsContext($hBitmapIcon)
-    $hContext=_GDIPlus_ImageGetGraphicsContext($hBitmap)
-    _GDIPlus_GraphicsSetPixelOffsetMode($hContext,$GDIP_PIXELOFFSETMODE_HIGHQUALITY)
-	_GDIPlus_GraphicsSetSmoothingMode($hContext,$GDIP_SMOOTHINGMODE_HIGHQUALITY)
-    _GDIPlus_GraphicsSetCompositingQuality($hContext,$GDIP_COMPOSITINGQUALITY_HIGHQUALITY)
-    _GDIPlus_GraphicsSetInterpolationMode($hContext,$GDIP_INTERPOLATIONMODE_HIGHQUALITYBICUBIC)
-	_GDIPlus_GraphicsSetSmoothingMode($hGraphics,$GDIP_SMOOTHINGMODE_HIGHQUALITY)
-    _GDIPlus_GraphicsSetCompositingQuality($hGraphics,$GDIP_COMPOSITINGQUALITY_HIGHQUALITY)
-    _GDIPlus_GraphicsSetInterpolationMode($hGraphics,$GDIP_INTERPOLATIONMODE_HIGHQUALITYBICUBIC)
-    _GDIPlus_GraphicsSetPixelOffsetMode($hGraphics,$GDIP_PIXELOFFSETMODE_HIGHQUALITY)
-    _GDIPlus_GraphicsFillEllipse($hContext, 0, 0, $iMargin+$iSizeIco+$iMargin, $iMargin+$iSizeIco+$iMargin, $hBrushBk);$hBrushRd)
-	_GDIPlus_GraphicsFillRect($hContext, $iMargin+($iSizeIco/2), 0, $iWidth-$iMargin-($iSizeIco/2), $iMargin+$iSizeIco+$iMargin, $hBrushBk);$hBrushGr)
-    $iIcoHeight=_GDIPlus_ImageGetHeight($hBitmapIcon)
-    _Log(StringFormat("[d] iIcoHeight:%d, iMargin:%d",$iIcoHeight,$iMargin))
-    ;_Log('')
- ;   _GDIPlus_GraphicsDrawRect($hContextIcon,0,0,$iIcoHeight-1,$iIcoHeight-1)
- ;   _GDIPlus_GraphicsDrawRect($hContext,0,0,$iWidth-1,$iHeight-1)
-    _GDIPlus_GraphicsFillEllipse($hContext, $iMargin, $iMargin, $iSizeIco, $iSizeIco, $hBrushRd);$hBrushBl)
-    _GDIPlus_GraphicsDrawImage($hContext, $hBitmapIcon, $iMargin, $iMargin);-($iMargin/4), $iMargin-($iMargin/4))
-    ;_GDIPlus_GraphicsDrawRect($hContext,$iMargin,$iMargin,$iWidth,$iHeight)
-    ;ConsoleWrite((Mod($iIcoHeight,2)==0)&','&$iIcoHeight&','&$iDpiNoScale&','&$iMargin&','&$iSizeIco&@CRLF)
-    $hHBitmap=_GDIPlus_BitmapCreateHBITMAPFromBitmap($hBitmap)
-
-    ;ConsoleWrite(TimerDiff($hTimer)&@CRLF)
-EndFunc
-
-Func _gfxReload()
-    _gfxDispose()
-    _gfxDraw()
-    _WinAPI_UpdateLayeredWindowEx($hGUI, -1, -1, $hHBitmap,0xBB)
-EndFunc
-
-Func initUI()
-	_GDIPlus_Startup() ;initialize GDI+
-	$hGUI = GUICreate("", $iWidth, $iHeight, $iLeft, $iTop, $WS_POPUP, $WS_EX_TOPMOST+$WS_EX_NOACTIVATE+$WS_EX_LAYERED+$WS_EX_TOOLWINDOW)
-    _gfxInit()
-    _gfxDraw()
-    $idDummyMenu = GUICtrlCreateDummy()
-    $gCtxMain = GUICtrlCreateContextMenu($idDummyMenu)
-    $ghCtxMain=GUICtrlGetHandle($gCtxMain)
-    _GUICtrlMenu_SetMenuStyle($ghCtxMain,$MNS_NOCHECK+$MNS_AUTODISMISS)
-    GUIRegisterMsg($WM_NCHITTEST, 'WM_NCHITTEST')
-    GUIRegisterMsg($WM_SYSCOMMAND, "WM_SYSCOMMAND")
-    GUIRegisterMsg($WM_MOUSEACTIVATE, 'WM_EVENTS')
-    GUIRegisterMsg($WM_DISPLAYCHANGE, "onDisplayChange")
-    AdlibRegister("_watchDisplay",250)
-    AdlibRegister('posTrackCall',64)
-	GUISetState(@SW_SHOWNOACTIVATE, $hGUI)
-
-    ;HotKeySet("#^x","_ctxEventMPos")
-    _WinAPI_UpdateLayeredWindowEx($hGUI, -1, -1, $hHBitmap,0xBB)
-EndFunc   ;==>Example
-
-Func WM_EVENTS($hWnd,$MsgID,$WParam,$LParam)
-    If $hWnd<>$hGui Or $MsgID<>$WM_MOUSEACTIVATE Then Return $GUI_RUNDEFMSG
-    Local $aPos=GUIGetCursorInfo($hGui)
-    ;ConsoleWrite($aPos[4]&@CRLF)
-    If Pixel_Distance($aPos[0],$aPos[1],$iMargin+($iSizeIco/2),$iMargin+($iSizeIco/2))<=($iSizeIco/2) Then
-        Local $iX=$iMargin+($iSizeIco/2)
-        Local $iY=$iX
-        ;ClientToScreen($hGui, $iX, $iY)
-        ;ConsoleWrite($aPos[0]&':'&$aPos[1]&@CRLF)
-        ;TrackPopupMenu($hGui, $ghCtxMain, $iX, $iY)
-        GUISetState(@SW_SHOWNOACTIVATE, $hGUI)
-        AdlibRegister("_ctxEvent")
-    EndIf
-    ;If $aPos[4]<>0 Then _SendMessage($hGui,$WM_COMMAND,_WinAPI_MakeLong($aPos[4],$BN_CLICKED),GUICtrlGetHandle($aPos[4]))
-    Return $MA_NOACTIVATEANDEAT
-EndFunc   ;==>WM_EVENTS
-
-Func WM_SYSCOMMAND($hWnd,$Msg,$wParam,$lParam)
-    If $hWnd<>$hGui Then $GUI_RUNDEFMSG
-    If BitAND($wParam,0xFFF0)=0xF010 Then Return 0
-    Return $GUI_RUNDEFMSG
-EndFunc   ;==>WM_SYSCOMMAND
-
-Func WM_NCHITTEST($hWnd,$iMsg,$wParam,$lParam)
-    #forceref $hWnd, $iMsg, $wParam, $lParam
-    Return $HTCAPTION
-EndFunc   ;==>WM_NCHITTEST
-
-Func WM_MOVING($hWnd,$iMsg,$wParam,$lParam)
-    If $hWnd=$hGui Then Return 1
-    Return $GUI_RUNDEFMSG
-EndFunc   ;==>WM_MOVING
-
 ;<== Context Menu Calls
 
 Func _ctxMacroAdSync()
@@ -286,8 +175,8 @@ EndFunc
 Func _ProcMacro($sString,$isClip=0)
     $gsMacroRegExTimeRound="\{~!Time,Round\((\d{1,})\)\}"
     $gaAutMacros=StringSplit("HOUR,MDAY,MIN,MON,MSEC,SEC,WDAY,YDAY,YEAR",',')
-    $sString=StringReplace($sString,@CRLF,"{enter}")
-    $sString=StringReplace($sString,@TAB,"{tab}")
+    ;$sString=StringReplace($sString,@CRLF,"{enter}")
+    ;$sString=StringReplace($sString,@TAB,"{tab}")
     ; Make interpreter? {~!(.*)}, comma delim.
     If StringRegExp($sString,"\{@TIME\}") Then
         $sMeridiem='a'
@@ -302,10 +191,8 @@ Func _ProcMacro($sString,$isClip=0)
         $sTime=$iHour&$iMin&$sMeridiem
         $sString=StringReplace($sString,"{@TIME}",$sTime)
     EndIf
-    If Not $isClip Then
-        $sString=StringReplace($sString,"{@clip}",StringStripWS(ClipGet(),3))
-    EndIf
 
+    $sString=StringReplace($sString,"{@clip}",StringStripWS(ClipGet(),3))
     ; Macro Interpreter
     While StringRegExp($sString,"{~!([^}]+)}")
         Local $aRet[][2]=[[0,'']]
@@ -499,91 +386,6 @@ Func _SetTip($sTip)
 EndFunc
 
 ;==> Context Menu Calls
-
-Func _MenuAdd(ByRef $aMenu,$iType,$sAlias=Null,$vActPar=Null)
-    $iMax=UBound($aMenu,1)
-    $iMaxY=UBound($aMenu,2)
-    ReDim $aMenu[$iMax+1][$iMaxY]
-    $aMenu[$iMax][0]=$iType
-    $aMenu[$iMax][1]=$sAlias
-    $aMenu[$iMax][2]=$vActPar
-    $aMenu[0][0]=$iMax
-EndFunc
-
-Func _InitDefMenu()
-    ; iType, sAlias, (sCallback | aSubMenu), idCtrl, hCtrl
-    ; iType 0=Separator, 1=Item, 2=Submenu, 3=Dynamic, 4=
-    Local $aCtxMacros[1][5]
-    $aCtxMacros[0][0]=0
-    Local $aCtxPins[1][5]
-    $aCtxPins[0][0]=0
-    Local $aCtxClipSend[1][5]
-    _MenuAdd($aCtxClipSend,1,'/w Macros','_ctxClipMacro')
-    _MenuAdd($aCtxClipSend,1,'Raw','_ctxClipRaw')
-
-    Local $aCtxClipTik[1][5]
-    _MenuAdd($aCtxClipTik,1,'Open','_ctxClipTikOpen')
-    _MenuAdd($aCtxClipTik,1,'mkUrl','_ctxClipTikClip')
-
-    Local $aCtxClip[1][5]
-    _MenuAdd($aCtxClip,2,'Send',$aCtxClipSend)
-    _MenuAdd($aCtxClip,2,'AsTicket',$aCtxClipTik)
-    ;_MenuAdd($aCtxClip,0)
-    ;_MenuAdd($aCtxClip,1,'Call {~!@Clip.RegExpRepl("^(\+\d{1,2}\s?)?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}$","$1.$2.$3")}','_ctxClipCall')
-
-    _MenuAdd($aCtxMenu,2,'Clip',$aCtxClip)
-    ;_MenuAdd($aCtxMenu,2,'Macros',$aCtxMacros)
-    ;_MenuAdd($aCtxMenu,0)
-    ;_MenuAdd($aCtxMenu,2,'Pins',$aCtxPins)
-    _MenuAdd($aCtxMenu,0)
-    _MenuAdd($aCtxMenu,1,'Dismiss','_ctxReload')
-    _MenuAdd($aCtxMenu,1,'Exit','_ctxExit')
-
-EndFunc
-
-; iType, sAlias, (sCallback | aSubMenu), idCtrl, hCtrl
-; iType 0=Separator, 1=Item, 2=Submenu, 3=Dynamic, 4=
-Func _InitMenu2(ByRef $aMenu, $idParent)
-    Local $idCtrl,$hCtrl,$sAlias,$iType,$vActPar
-    For $i=1 To $aMenu[0][0]
-        $iType=$aMenu[$i][0]
-        $sAlias=$aMenu[$i][1]
-        $vActPar=$aMenu[$i][2]
-        Switch $iType
-            Case 0; Create Separator
-                $idCtrl=GUICtrlCreateMenuItem('', $idParent)
-            Case 1; Create Item
-                $idCtrl=GUICtrlCreateMenuItem($sAlias, $idParent)
-                GUICtrlSetOnEvent($idCtrl,$vActPar)
-            Case 2; Create SubMenu
-                $idCtrl=GUICtrlCreateMenu($sAlias, $idParent)
-        EndSwitch
-        $hCtrl=GUICtrlGetHandle($idCtrl)
-        If $iType=2 Then
-            _GUICtrlMenu_SetMenuStyle($hCtrl,$MNS_NOCHECK+$MNS_AUTODISMISS)
-            _InitMenu2($vActPar,$idCtrl)
-        EndIf
-        $aMenu[$i][3]=$idCtrl
-        $aMenu[$i][4]=$hCtrl
-    Next
-    ;Return $aMenu
-EndFunc
-
-Func _destroyMenu(ByRef $aMenu, $idParent)
-    Local $idCtrl
-    For $i=1 To $aMenu[0][0]
-        $idCtrl=$aMenu[$i][3]
-        If $aMenu[$i][0]=2 Then
-            ConsoleWrite($aMenu[$i][0]&','&$aMenu[$i][1]&','&$aMenu[$i][3]&@CRLF)
-            _destroyMenu($aMenu[$i][2],$idCtrl)
-        Else
-            GUICtrlSetOnEvent($idCtrl,"")
-        EndIf
-        ConsoleWrite($idCtrl&@CRLF)
-        GUICtrlDelete($idCtrl)
-    Next
-    ;Return $aMenu
-EndFunc
 
 Func waitForIt()
     Local $bAbort=False
@@ -911,6 +713,599 @@ Func _GetMonInfo()
     Return SetError(0,0,$aRet)
 EndFunc
 
+
+Func _reloadMacroCtx()
+    Local $iMenuIdx=_ctxGetCtxMenuIdx($aCtxMenu,"Macros")
+    If @error Then Return False
+    ;Local $aMacroCtx=$aCtxMenu[$iMenuIdx][2]
+    Local $aMacroCtx[1][5]
+    If $aMacros[0][0]>0 Then
+        ;_ArrayDisplay($aMacros)
+        For $i=1 To $aMacros[0][0]
+            _MenuAdd($aMacroCtx,1,$aMacros[$i][1],'_ctxDoMacro')
+        Next
+        _MenuAdd($aMacroCtx,0)
+    EndIf
+    _MenuAdd($aMacroCtx,1,'Manager','_MacroMgr_Main_Init')
+    $aCtxMenu[$iMenuIdx][2]=$aMacroCtx
+EndFunc
+
+
+Func _ctxDoMacro()
+    Local $iMenuIdx=_ctxGetCtxMenuIdx($aCtxMenu,"Macros")
+    If @error Then Return False
+    Local $iIdx=_ctxGetItemIdxById($aCtxMenu[$iMenuIdx][2],@GUI_CtrlId)
+    If @error Then Return False
+    Local $sMacro=_ProcMacro($aMacros[$iIdx][2])
+    If Not waitForIt() Then Return
+    Send($sMacro,0)
+EndFunc
+
+Func _ctxGetCtxMenuIdx(ByRef $aMenu,$sAlias)
+    For $i=1 To $aMenu[0][0]
+        If $aMenu[$i][1]=$sAlias Then Return SetError(0,0,$i)
+    Next
+    Return SetError(1,0,0)
+EndFunc
+
+Func _ctxGetItemIdxById(ByRef $aMenu,$idCtrl)
+    For $i=1 To $aMenu[0][0]
+        If $aMenu[$i][3]=$idCtrl Then Return SetError(0,0,$i)
+    Next
+    Return SetError(1,0,0)
+EndFunc
+
+#Region ;OverlayUI
+
+Func _gfxRecalc()
+    $iMargin=2*$iDpi
+    $iSizeIco=16*$iDpi
+    $iWidth=$iSizeIco+($iMargin*2)
+    $iHeight=$iMargin+$iSizeIco+$iMargin
+    $iRight=$iWidth
+    $iTop=18*$iDpi
+    _Log(StringFormat("[b] iDpi:%0.3f, iSizeIco:%d, iWidth:%d, iHeight:%d, iRight:%d, iTop:%d",$iDpi,$iSizeIco,$iWidth,$iHeight,$iRight,$iTop))
+EndFunc
+
+Func _gfxInit()
+    If @Compiled Then
+        Local $hSelfLib = _WinAPI_LoadLibraryEx(Null,$LOAD_LIBRARY_AS_DATAFILE)
+        Local $hResource = _WinAPI_FindResource($hSelfLib,$RT_GROUP_ICON,1)
+        Local $hData = _WinAPI_LoadResource($hSelfLib, $hResource)
+        Local $pData = _WinAPI_LockResource($hData)
+        Local $iIcon = _WinAPI_LookupIconIdFromDirectoryEx($pData, 1, 2048, 2048)
+        Local $hResource = _WinAPI_FindResource($hSelfLib, $RT_ICON, $iIcon)
+        Local $iSize = _WinAPI_SizeOfResource($hSelfLib, $hResource)
+        $hData = _WinAPI_LoadResource($hSelfLib, $hResource)
+        $pData = _WinAPI_LockResource($hData)
+        $hIcon = _WinAPI_CreateIconFromResourceEx($pData,$iSize)
+    Else
+        $hIcon = _WinAPI_ShellExtractIcon(@ScriptDir&"\Res\ctdkgrrd.ico",0,2048,2048)
+    EndIf
+    $hIcon = _GDIPlus_BitmapCreateFromHICON32($hIcon)
+	$hGraphics = _GDIPlus_GraphicsCreateFromHWND($hGUI)
+	$hBrushBl = _GDIPlus_BrushCreateSolid(0xFFA0A0FF)
+	$hBrushGr = _GDIPlus_BrushCreateSolid(0xFFA0FFA0)
+	$hBrushRd = _GDIPlus_BrushCreateSolid(0xAAFFA0A0)
+    $hBrushBk = _GDIPlus_BrushCreateSolid(0xFFC0C0C0)
+EndFunc
+
+Func _gfxUninit()
+    _GDIPlus_BrushDispose($hBrushBl)
+    _GDIPlus_BrushDispose($hBrushGr)
+    _GDIPlus_BrushDispose($hBrushRd)
+    _GDIPlus_GraphicsDispose($hGraphics)
+EndFunc
+
+Func _gfxDispose()
+    _GDIPlus_GraphicsDispose($hContext)
+    _GDIPlus_BitmapDispose($hBitmap)
+EndFunc
+
+Func _gfxDraw()
+    ;$hTimer=TimerInit()
+    ;$hTimerA=TimerInit()
+    $hBitmapIcon=_GDIPlus_ImageResize($hIcon,$iSizeIco,$iSizeIco)
+    _GDIPlus_BitmapSetResolution($hBitmapIcon,96,96)
+    ;$hBitmapIcon=_GDIPlus_ImageScale($hIcon,$iSizeIco/2048,$iSizeIco/2048,$GDIP_INTERPOLATIONMODE_NEARESTNEIGHBOR)
+
+    _Log(StringFormat("[c] iDpi:%0.3f, iSizeIco:%d, iDpiNoScale:%0.3f, iSizeIco*iDpiNoScale:%0.3f, 24*iDpiNoScale:%f",$iDpi,$iSizeIco,$iDpiNoScale,$iSizeIco*$iDpiNoScale,24*$iDpiNoScale))
+
+    ;ConsoleWrite(TimerDiff($hTimerA)&@CRLF)
+    $hBitmap=_GDIPlus_BitmapCreateFromGraphics($iWidth, $iHeight, $hGraphics)
+    $hContextIcon=_GDIPlus_ImageGetGraphicsContext($hBitmapIcon)
+    $hContext=_GDIPlus_ImageGetGraphicsContext($hBitmap)
+    _GDIPlus_GraphicsSetPixelOffsetMode($hContext,$GDIP_PIXELOFFSETMODE_HIGHQUALITY)
+	_GDIPlus_GraphicsSetSmoothingMode($hContext,$GDIP_SMOOTHINGMODE_HIGHQUALITY)
+    _GDIPlus_GraphicsSetCompositingQuality($hContext,$GDIP_COMPOSITINGQUALITY_HIGHQUALITY)
+    _GDIPlus_GraphicsSetInterpolationMode($hContext,$GDIP_INTERPOLATIONMODE_HIGHQUALITYBICUBIC)
+	_GDIPlus_GraphicsSetSmoothingMode($hGraphics,$GDIP_SMOOTHINGMODE_HIGHQUALITY)
+    _GDIPlus_GraphicsSetCompositingQuality($hGraphics,$GDIP_COMPOSITINGQUALITY_HIGHQUALITY)
+    _GDIPlus_GraphicsSetInterpolationMode($hGraphics,$GDIP_INTERPOLATIONMODE_HIGHQUALITYBICUBIC)
+    _GDIPlus_GraphicsSetPixelOffsetMode($hGraphics,$GDIP_PIXELOFFSETMODE_HIGHQUALITY)
+    _GDIPlus_GraphicsFillEllipse($hContext, 0, 0, $iMargin+$iSizeIco+$iMargin, $iMargin+$iSizeIco+$iMargin, $hBrushBk);$hBrushRd)
+	_GDIPlus_GraphicsFillRect($hContext, $iMargin+($iSizeIco/2), 0, $iWidth-$iMargin-($iSizeIco/2), $iMargin+$iSizeIco+$iMargin, $hBrushBk);$hBrushGr)
+    $iIcoHeight=_GDIPlus_ImageGetHeight($hBitmapIcon)
+    _Log(StringFormat("[d] iIcoHeight:%d, iMargin:%d",$iIcoHeight,$iMargin))
+    ;_Log('')
+ ;   _GDIPlus_GraphicsDrawRect($hContextIcon,0,0,$iIcoHeight-1,$iIcoHeight-1)
+ ;   _GDIPlus_GraphicsDrawRect($hContext,0,0,$iWidth-1,$iHeight-1)
+    _GDIPlus_GraphicsFillEllipse($hContext, $iMargin, $iMargin, $iSizeIco, $iSizeIco, $hBrushRd);$hBrushBl)
+    _GDIPlus_GraphicsDrawImage($hContext, $hBitmapIcon, $iMargin, $iMargin);-($iMargin/4), $iMargin-($iMargin/4))
+    ;_GDIPlus_GraphicsDrawRect($hContext,$iMargin,$iMargin,$iWidth,$iHeight)
+    ;ConsoleWrite((Mod($iIcoHeight,2)==0)&','&$iIcoHeight&','&$iDpiNoScale&','&$iMargin&','&$iSizeIco&@CRLF)
+    $hHBitmap=_GDIPlus_BitmapCreateHBITMAPFromBitmap($hBitmap)
+
+    ;ConsoleWrite(TimerDiff($hTimer)&@CRLF)
+EndFunc
+
+Func _gfxReload()
+    _gfxDispose()
+    _gfxDraw()
+    _WinAPI_UpdateLayeredWindowEx($hGUI, -1, -1, $hHBitmap,0xBB)
+EndFunc
+
+Func initUI()
+	_GDIPlus_Startup() ;initialize GDI+
+	$hGUI = GUICreate("", $iWidth, $iHeight, $iLeft, $iTop, $WS_POPUP, $WS_EX_TOPMOST+$WS_EX_NOACTIVATE+$WS_EX_LAYERED+$WS_EX_TOOLWINDOW)
+    _gfxInit()
+    _gfxDraw()
+    $idDummyMenu = GUICtrlCreateDummy()
+    $gCtxMain = GUICtrlCreateContextMenu($idDummyMenu)
+    $ghCtxMain=GUICtrlGetHandle($gCtxMain)
+    _GUICtrlMenu_SetMenuStyle($ghCtxMain,$MNS_NOCHECK+$MNS_AUTODISMISS)
+    GUIRegisterMsg($WM_NCHITTEST, 'WM_NCHITTEST')
+    GUIRegisterMsg($WM_SYSCOMMAND, "WM_SYSCOMMAND")
+    GUIRegisterMsg($WM_MOUSEACTIVATE, 'WM_EVENTS')
+    GUIRegisterMsg($WM_DISPLAYCHANGE, "onDisplayChange")
+    AdlibRegister("_watchDisplay",250)
+    AdlibRegister('posTrackCall',64)
+	GUISetState(@SW_SHOWNOACTIVATE, $hGUI)
+
+    ;HotKeySet("#^x","_ctxEventMPos")
+    _WinAPI_UpdateLayeredWindowEx($hGUI, -1, -1, $hHBitmap,0xBB)
+EndFunc   ;==>Example
+
+Func WM_EVENTS($hWnd,$MsgID,$WParam,$LParam)
+    If $hWnd<>$hGui Or $MsgID<>$WM_MOUSEACTIVATE Then Return $GUI_RUNDEFMSG
+    Local $aPos=GUIGetCursorInfo($hGui)
+    ;ConsoleWrite($aPos[4]&@CRLF)
+    If Pixel_Distance($aPos[0],$aPos[1],$iMargin+($iSizeIco/2),$iMargin+($iSizeIco/2))<=($iSizeIco/2) Then
+        Local $iX=$iMargin+($iSizeIco/2)
+        Local $iY=$iX
+        ;ClientToScreen($hGui, $iX, $iY)
+        ;ConsoleWrite($aPos[0]&':'&$aPos[1]&@CRLF)
+        ;TrackPopupMenu($hGui, $ghCtxMain, $iX, $iY)
+        GUISetState(@SW_SHOWNOACTIVATE, $hGUI)
+        AdlibRegister("_ctxEvent")
+    EndIf
+    ;If $aPos[4]<>0 Then _SendMessage($hGui,$WM_COMMAND,_WinAPI_MakeLong($aPos[4],$BN_CLICKED),GUICtrlGetHandle($aPos[4]))
+    Return $MA_NOACTIVATEANDEAT
+EndFunc   ;==>WM_EVENTS
+
+Func WM_SYSCOMMAND($hWnd,$Msg,$wParam,$lParam)
+    If $hWnd<>$hGui Then $GUI_RUNDEFMSG
+    If BitAND($wParam,0xFFF0)=0xF010 Then Return 0
+    Return $GUI_RUNDEFMSG
+EndFunc   ;==>WM_SYSCOMMAND
+
+Func WM_NCHITTEST($hWnd,$iMsg,$wParam,$lParam)
+    #forceref $hWnd, $iMsg, $wParam, $lParam
+    Return $HTCAPTION
+EndFunc   ;==>WM_NCHITTEST
+
+Func WM_MOVING($hWnd,$iMsg,$wParam,$lParam)
+    If $hWnd=$hGui Then Return 1
+    Return $GUI_RUNDEFMSG
+EndFunc   ;==>WM_MOVING
+
+
+Func _MenuAdd(ByRef $aMenu,$iType,$sAlias=Null,$vActPar=Null)
+    $iMax=UBound($aMenu,1)
+    $iMaxY=UBound($aMenu,2)
+    ReDim $aMenu[$iMax+1][$iMaxY]
+    $aMenu[$iMax][0]=$iType
+    $aMenu[$iMax][1]=$sAlias
+    $aMenu[$iMax][2]=$vActPar
+    $aMenu[0][0]=$iMax
+EndFunc
+
+Func _InitDefMenu()
+    ; iType, sAlias, (sCallback | aSubMenu), idCtrl, hCtrl
+    ; iType 0=Separator, 1=Item, 2=Submenu, 3=Dynamic, 4=
+    Local $aCtxMacros[1][5]
+    $aCtxMacros[0][0]=2
+    Local $aCtxPins[1][5]
+    $aCtxPins[0][0]=0
+    Local $aCtxClipSend[1][5]
+    _MenuAdd($aCtxClipSend,1,'/w Macros','_ctxClipMacro')
+    _MenuAdd($aCtxClipSend,1,'Raw','_ctxClipRaw')
+
+    Local $aCtxClipTik[1][5]
+    _MenuAdd($aCtxClipTik,1,'Open','_ctxClipTikOpen')
+    _MenuAdd($aCtxClipTik,1,'mkUrl','_ctxClipTikClip')
+
+    Local $aCtxClip[1][5]
+    _MenuAdd($aCtxClip,2,'Send',$aCtxClipSend)
+    _MenuAdd($aCtxClip,2,'AsTicket',$aCtxClipTik)
+    ;_MenuAdd($aCtxClip,0)
+    ;_MenuAdd($aCtxClip,1,'Call {~!@Clip.RegExpRepl("^(\+\d{1,2}\s?)?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}$","$1.$2.$3")}','_ctxClipCall')
+
+    _MenuAdd($aCtxMenu,2,'Clip',$aCtxClip)
+    _MenuAdd($aCtxMenu,0)
+    ;_reloadMacroCtx()
+    _MenuAdd($aCtxMenu,2,'Macros',$aCtxMacros)
+    ;_MenuAdd($aCtxMenu,0)
+    ;_MenuAdd($aCtxMenu,2,'Pins',$aCtxPins)
+    _MenuAdd($aCtxMenu,0)
+    _MenuAdd($aCtxMenu,1,'Dismiss','_ctxReload')
+    _MenuAdd($aCtxMenu,1,'Exit','_ctxExit')
+    _reloadMacroCtx()
+EndFunc
+
+; iType, sAlias, (sCallback | aSubMenu), idCtrl, hCtrl
+; iType 0=Separator, 1=Item, 2=Submenu, 3=Dynamic, 4=
+Func _InitMenu2(ByRef $aMenu, $idParent)
+    Local $idCtrl,$hCtrl,$sAlias,$iType,$vActPar
+    For $i=1 To $aMenu[0][0]
+        $iType=$aMenu[$i][0]
+        $sAlias=$aMenu[$i][1]
+        $vActPar=$aMenu[$i][2]
+        Switch $iType
+            Case 0; Create Separator
+                $idCtrl=GUICtrlCreateMenuItem('', $idParent)
+            Case 1; Create Item
+                $idCtrl=GUICtrlCreateMenuItem($sAlias, $idParent)
+                GUICtrlSetOnEvent($idCtrl,$vActPar)
+            Case 2; Create SubMenu
+                $idCtrl=GUICtrlCreateMenu($sAlias, $idParent)
+        EndSwitch
+        $hCtrl=GUICtrlGetHandle($idCtrl)
+        If $iType=2 Then
+            _GUICtrlMenu_SetMenuStyle($hCtrl,$MNS_NOCHECK+$MNS_AUTODISMISS)
+            _InitMenu2($vActPar,$idCtrl)
+            $aMenu[$i][2]=$vActPar
+        EndIf
+        $aMenu[$i][3]=$idCtrl
+        $aMenu[$i][4]=$hCtrl
+    Next
+EndFunc
+
+Func _destroyMenu(ByRef $aMenu, $idParent)
+    Local $idCtrl
+    For $i=1 To $aMenu[0][0]
+        $idCtrl=$aMenu[$i][3]
+        If $aMenu[$i][0]=2 Then
+            ConsoleWrite($aMenu[$i][0]&','&$aMenu[$i][1]&','&$aMenu[$i][3]&@CRLF)
+            _destroyMenu($aMenu[$i][2],$idCtrl)
+        Else
+            GUICtrlSetOnEvent($idCtrl,"")
+        EndIf
+        ConsoleWrite($idCtrl&@CRLF)
+        GUICtrlDelete($idCtrl)
+    Next
+    ;Return $aMenu
+EndFunc
+
+#EndRegion OverlayUI
+
+#Region ;Macro Manager
+
+Func _MacroMgr_Main_Init()
+    Global $gMacroMgr_hWnd=GUICreate($gMacroMgr_sTitle,$gMacroMgr_iGuiW,$gMacroMgr_iGuiH,-1,-1,-1,$WS_EX_TOOLWINDOW,$hGUI)
+    GUISetFont(8.5,400,0,"Consolas",$gMacroMgr_hWnd)
+    Global $gMacroMgr_idTree=GUICtrlCreateTreeView($iMargin-2,$iMargin,$gMacroMgr_iPaneAW,$gMacroMgr_iGuiH-$gMacroMgr_iBtnH-($iMargin*3),BitOR($TVS_HASBUTTONS, $TVS_HASLINES, $TVS_SHOWSELALWAYS),$WS_EX_CLIENTEDGE)
+    Global $gMacroMgr_hTree=GUICtrlGetHandle($gMacroMgr_idTree)
+    Global $gMacroMgr_idTreeRoot=-1
+    ;Global $gMacroMgr_hTreeRoot=GUICtrlGetHandle($gMacroMgr_idTreeRoot)
+    Global $gMacroMgr_idTreeAdd=GUICtrlCreateButton("Add",$iMargin,$gMacroMgr_iBtnT,$gMacroMgr_iBtnW,$gMacroMgr_iBtnH)
+    Global $gMacroMgr_idTreeRm=GUICtrlCreateButton("Del",$iMargin+$gMacroMgr_iBtnW,$gMacroMgr_iBtnT,$gMacroMgr_iBtnW,$gMacroMgr_iBtnH)
+    Global $gMacroMgr_idLabel=GUICtrlCreateInput("Macro Label",$gMacroMgr_iPaneAW+$iMargin,$iMargin-1,$gMacroMgr_iGuiW-$gMacroMgr_iPaneAW-$iMargin-2,21,$WS_CHILD+$WS_BORDER,$WS_EX_CLIENTEDGE)
+    Global $gMacroMgr_hLabel=GUICtrlGetHandle($gMacroMgr_idLabel)
+    _GUICtrlEdit_SetCueBanner($gMacroMgr_hLabel,"Macro Label",1)
+    Global $gMacroMgr_idEdit=GUICtrlCreateEdit("Macro Definition",$gMacroMgr_iPaneAW+$iMargin,$iMargin-1+21+$iMargin,$gMacroMgr_iGuiW-$gMacroMgr_iPaneAW-$iMargin-2,$gMacroMgr_iGuiH-$gMacroMgr_iBtnH-($iMargin*3)-24,$WS_CHILD+$WS_BORDER,$WS_EX_CLIENTEDGE)
+    Global $gMacroMgr_hEdit=GUICtrlGetHandle($gMacroMgr_idEdit)
+    Global $gMacroMgr_idDiscard=GUICtrlCreateButton("Discard", $gMacroMgr_iPaneAW+$iMargin*2, $gMacroMgr_iBtnT, 52, $gMacroMgr_iBtnH)
+    Global $gMacroMgr_idSave=GUICtrlCreateButton("Save", $gMacroMgr_iPaneAW+($iMargin*2)+52, $gMacroMgr_iBtnT, 52, $gMacroMgr_iBtnH)
+    Global $gMacroMgr_idTest=GUICtrlCreateButton("Test", $gMacroMgr_iPaneAW+($iMargin*2)+104, $gMacroMgr_iBtnT, 52, $gMacroMgr_iBtnH)
+    GUISetOnEvent($GUI_EVENT_CLOSE,"_MacroMgr_Main_Close",$gMacroMgr_hWnd)
+    GUICtrlSetOnEvent($gMacroMgr_idTreeAdd,"_MacroMgr_Main_Add")
+    GUICtrlSetOnEvent($gMacroMgr_idTreeRm,"_MacroMgr_Main_Del")
+    GUICtrlSetOnEvent($gMacroMgr_idDiscard,"_MacroMgr_Main_Discard")
+    GUICtrlSetOnEvent($gMacroMgr_idSave,"_MacroMgr_Main_Save")
+    GUICtrlSetOnEvent($gMacroMgr_idTest,"_MacroMgr_Main_Test")
+
+    If $aMacros[0][0]=0 Then
+        _MacroMgr_Main_GuiState(0)
+    Else
+        _MacroMgr_Main_GuiState(1)
+    EndIf
+    _MacroMgr_Main_MacroLoad()
+    GUIRegisterMsg($WM_NOTIFY, "_MacroMgr_Main_WM_NOTIFY")
+    GUIRegisterMsg($WM_COMMAND, "_MacroMgr_Main_WM_COMMAND")
+    GUISetState(@SW_SHOW,$gMacroMgr_hWnd)
+EndFunc
+
+Func _MacroMgr_Main_WM_COMMAND($hWnd, $iMsg, $wParam, $lParam)
+    If $hWnd<>$gMacroMgr_hWnd Then Return $GUI_RUNDEFMSG
+    Switch BitAND($wParam, 0xFFFF); idCtrl
+        Case $gMacroMgr_idLabel
+            Switch BitShift($wParam, 16); iCode
+                Case $EN_CHANGE
+                    If GUICtrlRead($gMacroMgr_idLabel)=$aMacros[$gMacroMgr_iSel][1] Then
+                        _MacroMgr_Main_GuiCtrlNotState(16+32)
+                    Else
+                        _MacroMgr_Main_GuiCtrlState(BitOR($gMacroMgr_iGuiState,16+32))
+                    EndIf
+            EndSwitch
+        Case $gMacroMgr_idEdit
+            Switch BitShift($wParam, 16); iCode
+                Case $EN_CHANGE
+                    If GUICtrlRead($gMacroMgr_idEdit)=$aMacros[$gMacroMgr_iSel][2] Then
+                        _MacroMgr_Main_GuiCtrlNotState(16+32)
+                    Else
+                        _MacroMgr_Main_GuiCtrlState(BitOR($gMacroMgr_iGuiState,16+32))
+                    EndIf
+            EndSwitch
+    EndSwitch
+    Return $GUI_RUNDEFMSG
+EndFunc
+
+Func _MacroMgr_Main_WM_NOTIFY($hWnd, $iMsg, $iwParam, $ilParam)
+    #forceref $hWnd, $iMsg, $iwParam
+    Local $hWndFrom, $iIDFrom, $iCode, $tNMHDR, $hWndTreeview
+    $hWndTreeview = $gMacroMgr_hTree
+    If Not IsHWnd($gMacroMgr_hTree) Then $hWndTreeview = GUICtrlGetHandle($gMacroMgr_hTree)
+
+    $tNMHDR = DllStructCreate($tagNMHDR, $ilParam)
+    $hWndFrom = HWnd(DllStructGetData($tNMHDR, "hWndFrom"))
+    $iIDFrom = DllStructGetData($tNMHDR, "IDFrom")
+    $iCode = DllStructGetData($tNMHDR, "Code")
+    Switch $hWndFrom
+        Case $gMacroMgr_hEdit
+
+        Case $hWndTreeview
+            Switch $iCode
+                Case $TVN_ITEMCHANGEDW, $TVN_ITEMCHANGEDA
+                    $tNMTVIC=DllStructCreate($tagNMTVITEMCHANGE,$ilParam)
+                    Local $hItem=DllStructGetData($tNMTVIC, "hItem")
+                    If $hItem=$gMacroMgr_hTree Then Return $GUI_RUNDEFMSG
+                    If Not _GUICtrlTreeView_GetSelected($gMacroMgr_hTree,$hItem) Then Return $GUI_RUNDEFMSG
+                    ;ConsoleWrite(StringFormat("Item %s Changed, checked=%s\n", $hItem, _GUICtrlTreeView_GetText($hWndFrom,$hItem)))
+                    For $i=1 To $gMacroMgr_aTreeMap[0][0]
+                        If $hItem<>$gMacroMgr_aTreeMap[$i][3] Then ContinueLoop
+                        ;ConsoleWrite($gMacroMgr_aTreeMap[$i][5]&@CRLF)
+                        $iIdx=$gMacroMgr_aTreeMap[$i][5]
+                        $gMacroMgr_iSel=$iIdx
+                        GUICtrlSetData($gMacroMgr_idLabel,$aMacros[$iIdx][1])
+                        GUICtrlSetData($gMacroMgr_idEdit,$aMacros[$iIdx][2])
+                        _MacroMgr_Main_GuiState(2)
+                    Next
+            EndSwitch
+    EndSwitch
+    Return $GUI_RUNDEFMSG
+EndFunc   ;==>WM_NOTIFY
+
+Func _MacroMgr_Main_Close()
+    GUISetState(@SW_HIDE,$gMacroMgr_hWnd)
+    GUISetOnEvent($GUI_EVENT_CLOSE,"",$gMacroMgr_hWnd)
+    GUICtrlSetOnEvent($gMacroMgr_idTreeAdd,"")
+    GUICtrlSetOnEvent($gMacroMgr_idTreeRm,"")
+    GUICtrlSetOnEvent($gMacroMgr_idDiscard,"")
+    GUICtrlSetOnEvent($gMacroMgr_idSave,"")
+    GUICtrlSetOnEvent($gMacroMgr_idTest,"")
+    GUIRegisterMsg($WM_NOTIFY, "")
+    GUIRegisterMsg($WM_COMMAND, "")
+    GUIDelete($gMacroMgr_hWnd)
+EndFunc
+
+Func _MacroMgr_Main_MacroLoad()
+    _GUICtrlTreeView_BeginUpdate($gMacroMgr_hTree)
+    _GUICtrlTreeView_DeleteAll($gMacroMgr_hTree)
+    Dim $gMacroMgr_aTreeMap[1][6]
+    Local $iMax,$idTreeItem,$idRoot,$vPath,$idParent
+    For $i=1 To $aMacros[0][0]
+        $idRoot=$gMacroMgr_idTree
+        $vPath=$aMacros[$i][0]
+        If $vPath<>"" Then
+            If StringInStr($vPath,'/') Then
+                $vPath=StringSplit($aMacros[$i][0],'/')
+                For $j=1 To $vPath[0]
+                    $idParent=$idRoot
+                    $idRoot=GUICtrlCreateTreeViewItem($vPath[$j],$idRoot)
+                    $iMax=UBound($gMacroMgr_aTreeMap,1)
+                    ReDim $gMacroMgr_aTreeMap[$iMax+1][6]
+                    $gMacroMgr_aTreeMap[$iMax][0]=$idRoot
+                    $gMacroMgr_aTreeMap[$iMax][1]=$idParent
+                    $gMacroMgr_aTreeMap[$iMax][2]=$vPath[$j]
+                    $gMacroMgr_aTreeMap[$iMax][3]=GUICtrlGetHandle($idRoot)
+                    $gMacroMgr_aTreeMap[$iMax][4]=GUICtrlGetHandle($idParent)
+                Next
+            Else
+                $idParent=$idRoot
+                $idRoot=GUICtrlCreateTreeViewItem($aMacros[$i][0],$idRoot)
+                $iMax=UBound($gMacroMgr_aTreeMap,1)
+                ReDim $gMacroMgr_aTreeMap[$iMax+1][6]
+                $gMacroMgr_aTreeMap[$iMax][0]=$idRoot
+                $gMacroMgr_aTreeMap[$iMax][1]=$idParent
+                $gMacroMgr_aTreeMap[$iMax][2]=$aMacros[$i][0]
+                $gMacroMgr_aTreeMap[$iMax][3]=GUICtrlGetHandle($idRoot)
+                $gMacroMgr_aTreeMap[$iMax][4]=GUICtrlGetHandle($idParent)
+            EndIf
+        EndIf
+        $iMax=UBound($gMacroMgr_aTreeMap,1)
+        ReDim $gMacroMgr_aTreeMap[$iMax+1][6]
+        $idParent=$idRoot
+        $idTreeItem=GUICtrlCreateTreeViewItem($aMacros[$i][1],$idRoot)
+        $gMacroMgr_aTreeMap[$iMax][0]=$idTreeItem
+        $gMacroMgr_aTreeMap[$iMax][1]=$idParent
+        $gMacroMgr_aTreeMap[$iMax][2]=$aMacros[$i][1]
+        $gMacroMgr_aTreeMap[$iMax][3]=GUICtrlGetHandle($idTreeItem)
+        $gMacroMgr_aTreeMap[$iMax][4]=GUICtrlGetHandle($idParent)
+        $gMacroMgr_aTreeMap[$iMax][5]=$i
+    Next
+    ;GUICtrlSetState($gMacroMgr_idTree,$GUI_DISABLE+$GUI_EXPAND)
+    $gMacroMgr_aTreeMap[0][0]=$iMax
+    _GUICtrlTreeView_EndUpdate($gMacroMgr_hTree)
+EndFunc
+
+Func _MacroMgr_Main_Add()
+    Global $gMacroMgr_hAdd=GUICreate("Add Macro",384,64,-1,-1,-1,-1,$gMacroMgr_hWnd)
+    GUISetFont(8.5,400,0,"Consolas",$gMacroMgr_hAdd)
+    Global $gMacroMgr_idAddLabel=GUICtrlCreateInput("",$iMargin,$iMargin,384-$iMargin*2)
+    _GUICtrlEdit_SetCueBanner(GUICtrlGetHandle($gMacroMgr_idAddLabel),"New Macro Label",1)
+    Global $gMacroMgr_idAddCancel=GUICtrlCreateButton("Cancel", (384/2), 64-$gMacroMgr_iBtnH-$iMargin*2, 64, $gMacroMgr_iBtnH)
+    Global $gMacroMgr_idAddOk=GUICtrlCreateButton("Add", (384/2)-64, 64-$gMacroMgr_iBtnH-$iMargin*2, 64, $gMacroMgr_iBtnH)
+    GUISetState(@SW_SHOW,$gMacroMgr_hAdd)
+    GUISetOnEvent($GUI_EVENT_CLOSE,"_MacroMgr_Add_Close",$gMacroMgr_hAdd)
+    GUICtrlSetOnEvent($gMacroMgr_idAddCancel,"_MacroMgr_Add_Close")
+    GUICtrlSetOnEvent($gMacroMgr_idAddOk,"_MacroMgr_Add_Add")
+EndFunc
+
+Func _MacroMgr_Add_Close()
+    GUIDelete($gMacroMgr_hAdd)
+EndFunc
+
+Func _MacroMgr_Main_Del()
+    If Not _MacroMgr_Main_ModPrompt("del") Then Return
+    Local $iY=UBound($aMacros,2)
+    Local $i, $iMax, $aMacrosNew[1][$iY]
+    For $i=1 To $aMacros[0][0]
+        If $i=$gMacroMgr_iSel Then ContinueLoop
+        $iMax=UBound($aMacrosNew,1)
+        ReDim $aMacrosNew[$iMax+1][$iY]
+        For $j=0 To $iY-1
+            $aMacrosNew[$iMax][$j]=$aMacros[$i][$j]
+        Next
+    Next
+    $aMacrosNew[0][0]=$iMax
+    $aMacros=$aMacrosNew
+    _MacroMgr_Main_MacroLoad()
+    _SaveMacros()
+    _reloadMacroCtx()
+EndFunc
+
+Func _MacroMgr_Main_Discard()
+    If Not _MacroMgr_Main_ModPrompt("disc") Then Return
+    GUICtrlSetData($gMacroMgr_idLabel,$aMacros[$gMacroMgr_iSel][1])
+    GUICtrlSetData($gMacroMgr_idEdit,$aMacros[$gMacroMgr_iSel][2])
+EndFunc
+
+Func _MacroMgr_Main_Save()
+    If Not _MacroMgr_Main_ModPrompt("sav") Then Return
+    $aMacros[$gMacroMgr_iSel][1]=GUICtrlRead($gMacroMgr_idLabel)
+    $aMacros[$gMacroMgr_iSel][2]=GUICtrlRead($gMacroMgr_idEdit)
+    _MacroMgr_Main_MacroLoad()
+    _SaveMacros()
+    _reloadMacroCtx()
+EndFunc
+
+Func _MacroMgr_Main_Test()
+    Local $sMacro=GUICtrlRead($gMacroMgr_idEdit)
+    If Not waitForIt() Then Return
+    Send(_ProcMacro($sMacro),0)
+EndFunc
+
+Func _MacroMgr_Main_ModPrompt($sOp)
+    Switch $sOp
+        Case "del"
+            $sOp=StringFormat('delete "%s"?',$aMacros[$gMacroMgr_iSel][1])
+        Case "disc"
+            $sOp=StringFormat('discard changes to "%s"?',$aMacros[$gMacroMgr_iSel][1])
+        Case "sav"
+            $sOp=StringFormat('save changes to "%s"?',$aMacros[$gMacroMgr_iSel][1])
+    EndSwitch
+    Return MsgBox(33,$gMacroMgr_sTitle,StringFormat("Are you sure you want to %s",$sOp),0,$gMacroMgr_hWnd)=1
+EndFunc
+
+Func _MacroMgr_Add_Add()
+    Local $hSel=_GUICtrlTreeView_GetSelection($gMacroMgr_hTree)
+    Local $sLabel=GUICtrlRead($gMacroMgr_idAddLabel)
+    ;MsgBox(64,"",)
+    For $i=1 To $aMacros[0][0]
+        If StringLower($aMacros[$i][0])=StringLower($gMacroMgr_sPath) And $aMacros[$i][1]=$sLabel Then
+            MsgBox(16,$gMacroMgr_sTitle,"A Macro with this name already exists.",0,$gMacroMgr_hWnd)
+            Return
+        EndIf
+    Next
+    _MacroAdd($sLabel,"",$gMacroMgr_sPath)
+    _MacroMgr_Add_Close()
+    _MacroMgr_Main_MacroLoad()
+    _GUICtrlTreeView_SetSelected($gMacroMgr_hTree,$hSel,1)
+    _reloadMacroCtx()
+EndFunc
+
+Func _MacroMgr_Main_GuiState($iState)
+    Local $xState=0x0
+    Switch $iState
+        Case 0 ; No Macros
+            If $gMacroMgr_idTreeRoot=-1 Then
+                $gMacroMgr_idTreeRoot=GUICtrlCreateTreeViewItem("",$gMacroMgr_idTree)
+                GuiCtrlSetData($gMacroMgr_idTreeRoot,"No Macros Defined")
+            EndIf
+        Case 1 ; No Macros
+            If $gMacroMgr_idTreeRoot<>-1 Then
+                GUICtrlDelete($gMacroMgr_idTreeRoot)
+                $gMacroMgr_idTreeRoot=-1
+            EndIf
+            ;GuiCtrlSetData($gMacroMgr_idTreeRoot,"Macros")
+            ;GUICtrlSetState($gMacroMgr_idTreeRoot,$GUI_DISABLE+$GUI_EXPAND)
+            $xState=1
+        Case 2 ; Macro Selected
+            $xState=1+2+4+8+64
+    EndSwitch
+    _MacroMgr_Main_GuiCtrlState($xState)
+EndFunc
+
+Func _MacroMgr_Main_GuiCtrlNotState($xState)
+    _MacroMgr_Main_GuiCtrlState(BitAND($gMacroMgr_iGuiState,BitNOT($xState)))
+EndFunc
+
+Func _MacroMgr_Main_GuiCtrlState($xState)
+    ;_MacroMgr_Main_GuiCtrlState(BitAND($gMacroMgr_iGuiState,BitNOT()))
+    GUICtrlSetState($gMacroMgr_idTree,BitAND($xState,1)?$GUI_ENABLE:$GUI_DISABLE)
+    GUICtrlSetState($gMacroMgr_idTreeRm,BitAND($xState,2)?$GUI_ENABLE:$GUI_DISABLE)
+    GUICtrlSetState($gMacroMgr_idLabel,BitAND($xState,4)?$GUI_ENABLE:$GUI_DISABLE)
+    GUICtrlSetState($gMacroMgr_idEdit,BitAND($xState,8)?$GUI_ENABLE:$GUI_DISABLE)
+    GUICtrlSetState($gMacroMgr_idDiscard,BitAND($xState,16)?$GUI_ENABLE:$GUI_DISABLE)
+    GUICtrlSetState($gMacroMgr_idSave,BitAND($xState,32)?$GUI_ENABLE:$GUI_DISABLE)
+    GUICtrlSetState($gMacroMgr_idTest,BitAND($xState,64)?$GUI_ENABLE:$GUI_DISABLE)
+    $gMacroMgr_iGuiState=$xState
+EndFunc
+
+#EndRegion ;Macro Manager
+
+Func _LoadMacros()
+    Local $aMacroDat=IniReadSection($gsConfig,"Macros")
+    If @error Then Return
+    For $i=1 To $aMacroDat[0][0]
+        If Not StringInStr($aMacroDat[$i][1],'|') Then ContinueLoop
+        $aTmp=StringSplit($aMacroDat[$i][1],'|')
+        Local $sPath=$aTmp[1]
+        If $sPath<>'' Then $sPath=BinaryToString(_Base64Decode($sPath))
+        Local $sMacro=$aTmp[2]
+        If $sMacro<>'' Then $sMacro=BinaryToString(_Base64Decode($sMacro))
+        _MacroAdd($aMacroDat[$i][0],$sMacro,$sPath)
+    Next
+EndFunc
+
+Func _SaveMacros()
+    IniDelete($gsConfig,"Macros")
+    For $i=1 To $aMacros[0][0]
+        IniWrite($gsConfig,"Macros",$aMacros[$i][1],StringFormat("%s|%s",_Base64Encode($aMacros[$i][0]),_Base64Encode($aMacros[$i][2])))
+    Next
+EndFunc
+
+Func _MacroAdd($sLabel,$sMacro="",$sPath="")
+    Local $iMax=UBound($aMacros,1)
+    ReDim $aMacros[$iMax+1][3]
+    $aMacros[$iMax][0]=$sPath
+    $aMacros[$iMax][1]=$sLabel
+    $aMacros[$iMax][2]=$sMacro
+    $aMacros[0][0]=$iMax
+EndFunc
+
+#Region ;3P Helper Funcs
 ; #FUNCTION# ====================================================================================================================
 ; Author.........: Yashied
 ; Modified.......: BiatuAutMiahn, jpm
@@ -994,3 +1389,4 @@ Func __WinAPI_IsBadWritePtr($pAddress, $iLength)
 
 	Return $aCall[0]
 EndFunc   ;==>_WinAPI_IsBadWritePtr
+#EndRegion ;3P Helper Funcs
