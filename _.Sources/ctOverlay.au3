@@ -127,10 +127,12 @@ Local $iSizeIco, $iMargin, $iWidth, $iHeight, $iRight, $iTop
 _gfxRecalc()
 Global $hGUI
 $iLeft=@DesktopWidth-$iRight
-
+Global $bNoActivate=False
+Global $hLastActive
 ;getMonInfo()
 ;_loadPins()
 initUI()
+
 While Sleep(125)
 WEnd
 _gfxDispose()
@@ -617,6 +619,7 @@ Func _ctxEvent()
     _destroyMenu($aCtxMenu, $gCtxMain)
     _InitMenu2($aCtxMenu, $gCtxMain)
     ShowMenu($hGui, $gCtxMain, ($iSizeIco/2)-$iMargin, $iMargin+($iSizeIco/2))
+    _WinAPI_SetForegroundWindow($hLastActive)
 EndFunc
 
 Func _ctxEventMPos()
@@ -860,32 +863,96 @@ Func initUI()
     _GUICtrlMenu_SetMenuStyle($ghCtxMain,$MNS_NOCHECK+$MNS_AUTODISMISS)
     GUIRegisterMsg($WM_NCHITTEST, 'WM_NCHITTEST')
     GUIRegisterMsg($WM_SYSCOMMAND, "WM_SYSCOMMAND")
+
+    ;GUIRegisterMsg($WM_SETCONTEXT, "WM_NOOP")
+    ;GUIRegisterMsg($WM_SETFOCUS, "WM_NOFOCUS")
+    ;GUIRegisterMsg($WM_EXITMENULOOP, "WM_EXITMENU")
+    ;GUIRegisterMsg($WM_SETFOCUS, "WM_NOFOCUS")
+    ;GUIRegisterMsg($WM_ACTIVATE, "WM_NOFOCUS")
+    ;GUIRegisterMsg($WM_ACTIVATEAPP, "WM_NOFOCUS")
+    ;GUIRegisterMsg($WM_NCACTIVATE, "WM_NOFOCUS")
+    ;GUIRegisterMsg($WM_UNINITMENUPOPUP, "WM_NOOP")
+    ;GUIRegisterMsg($WM_INITMENUPOPUP, "WM_EXITMENU")
+    GUIRegisterMsg($WM_MENUSELECT, "WM_EXITMENU")
+    GUIRegisterMsg($WM_MENUCOMMAND, "WM_EXITMENU")
+    ;GUIRegisterMsg($WM_LBUTTONUP, "WM_EXITMENU")
+    ;GUIRegisterMsg($WM_LBUTTONDOWN, "WM_EXITMENU")
+
     GUIRegisterMsg($WM_MOUSEACTIVATE, 'WM_EVENTS')
     GUIRegisterMsg($WM_DISPLAYCHANGE, "onDisplayChange")
     AdlibRegister("_watchDisplay",250)
     AdlibRegister('posTrackCall',64)
-	GUISetState(@SW_SHOWNOACTIVATE, $hGUI)
+	  GUISetState(@SW_SHOWNOACTIVATE, $hGUI)
 
     ;HotKeySet("#^x","_ctxEventMPos")
     _WinAPI_UpdateLayeredWindowEx($hGUI, -1, -1, $hHBitmap,0xBB)
 EndFunc   ;==>Example
 
-Func WM_EVENTS($hWnd,$MsgID,$WParam,$LParam)
-    If $hWnd<>$hGui Or $MsgID<>$WM_MOUSEACTIVATE Then Return $GUI_RUNDEFMSG
-    Local $aPos=GUIGetCursorInfo($hGui)
-    ;ConsoleWrite($aPos[4]&@CRLF)
-    If Pixel_Distance($aPos[0],$aPos[1],$iMargin+($iSizeIco/2),$iMargin+($iSizeIco/2))<=($iSizeIco/2) Then
-        Local $iX=$iMargin+($iSizeIco/2)
-        Local $iY=$iX
-        ;ClientToScreen($hGui, $iX, $iY)
-        ;ConsoleWrite($aPos[0]&':'&$aPos[1]&@CRLF)
-        ;TrackPopupMenu($hGui, $ghCtxMain, $iX, $iY)
-        GUISetState(@SW_SHOWNOACTIVATE, $hGUI)
-        AdlibRegister("_ctxEvent")
-    EndIf
-    ;If $aPos[4]<>0 Then _SendMessage($hGui,$WM_COMMAND,_WinAPI_MakeLong($aPos[4],$BN_CLICKED),GUICtrlGetHandle($aPos[4]))
-    Return $MA_NOACTIVATEANDEAT
-EndFunc   ;==>WM_EVENTS
+Func WM_EXITMENU($hwnd, $iMsg, $wParam, $lParam)
+    #forceref $hwnd, $iMsg, $wParam, $lParam
+    If $hWnd<>$hGui Then $GUI_RUNDEFMSG
+    $bNoActivate=False
+    _WinAPI_SetForegroundWindow($hLastActive)
+    Return $GUI_RUNDEFMSG
+EndFunc   ;==>WM_CONTEXTMENU
+
+Func WM_UNINITMENU($hwnd, $iMsg, $wParam, $lParam)
+    #forceref $hwnd, $iMsg, $wParam, $lParam
+    If $hWnd<>$hGui Then $GUI_RUNDEFMSG
+    Return 0
+    Return $GUI_RUNDEFMSG
+EndFunc   ;==>WM_CONTEXTMENU
+
+Func WM_EVENTS($hWndGUI, $MsgID, $WParam, $LParam)
+    Switch $hWndGUI
+      Case $hGUI
+            Switch $MsgID
+              Case $WM_MOUSEACTIVATE
+                ;If $bNoActivate Then Return $GUI_RUNDEFMSG
+                ;$bNoActivate=True
+                $hLastActive=_WinAPI_GetForegroundWindow();_WinAPI_GetActiveWindow()
+                $hCurrWnd = $hLastActive;_WinAPI_GetForegroundWindow()
+                Local $aPos=GUIGetCursorInfo($hGui)
+                ;ConsoleWrite($aPos[4]&@CRLF)
+                If Pixel_Distance($aPos[0],$aPos[1],$iMargin+($iSizeIco/2),$iMargin+($iSizeIco/2))<=($iSizeIco/2) Then
+                    Local $iX=$iMargin+($iSizeIco/2)
+                    Local $iY=$iX
+                    ;ClientToScreen($hGui, $iX, $iY)
+                    ;ConsoleWrite($aPos[0]&':'&$aPos[1]&@CRLF)
+                    ;TrackPopupMenu($hGui, $ghCtxMain, $iX, $iY)
+                    GUISetState(@SW_SHOWNOACTIVATE, $hGUI)
+                    AdlibRegister("_ctxEvent")
+                EndIf
+                Return $MA_NOACTIVATEANDEAT
+            EndSwitch
+    EndSwitch
+    Return $GUI_RUNDEFMSG
+EndFunc
+
+;~ Func WM_EVENTS($hWnd,$MsgID,$WParam,$LParam)
+;~     If $hWnd<>$hGui Or $MsgID<>$WM_MOUSEACTIVATE Then Return $GUI_RUNDEFMSG
+;~     Local $aPos=GUIGetCursorInfo($hGui)
+;~     ;ConsoleWrite($aPos[4]&@CRLF)
+;~     If Pixel_Distance($aPos[0],$aPos[1],$iMargin+($iSizeIco/2),$iMargin+($iSizeIco/2))<=($iSizeIco/2) Then
+;~         Local $iX=$iMargin+($iSizeIco/2)
+;~         Local $iY=$iX
+;~         ;ClientToScreen($hGui, $iX, $iY)
+;~         ;ConsoleWrite($aPos[0]&':'&$aPos[1]&@CRLF)
+;~         ;TrackPopupMenu($hGui, $ghCtxMain, $iX, $iY)
+;~         GUISetState(@SW_SHOWNOACTIVATE, $hGUI)
+;~         AdlibRegister("_ctxEvent")
+;~     EndIf
+;~     ;If $aPos[4]<>0 Then _SendMessage($hGui,$WM_COMMAND,_WinAPI_MakeLong($aPos[4],$BN_CLICKED),GUICtrlGetHandle($aPos[4]))
+;~     Return $MA_NOACTIVATEANDEAT
+;~ EndFunc   ;==>WM_EVENTS
+
+Func WM_MENUSELECT($hWnd, $iMsg, $iwParam, $ilParam)
+    Local $Flags = BitShift($iwParam, 16)
+    If BitAND($Flags, $MF_POPUP) Then
+        Consolewrite("I have An Arrow :)" & @crlf)
+        EndIf
+    Return $GUI_RUNDEFMSG
+EndFunc
 
 Func WM_SYSCOMMAND($hWnd,$Msg,$wParam,$lParam)
     If $hWnd<>$hGui Then $GUI_RUNDEFMSG
@@ -895,14 +962,22 @@ EndFunc   ;==>WM_SYSCOMMAND
 
 Func WM_NCHITTEST($hWnd,$iMsg,$wParam,$lParam)
     #forceref $hWnd, $iMsg, $wParam, $lParam
+    If $hWnd<>$hGui Then $GUI_RUNDEFMSG
     Return $HTCAPTION
 EndFunc   ;==>WM_NCHITTEST
 
 Func WM_MOVING($hWnd,$iMsg,$wParam,$lParam)
+  #forceref $hWnd, $iMsg, $wParam, $lParam
     If $hWnd=$hGui Then Return 1
     Return $GUI_RUNDEFMSG
 EndFunc   ;==>WM_MOVING
 
+Func WM_NOOP($hWnd,$iMsg,$wParam,$lParam)
+  #forceref $hWnd, $iMsg, $wParam, $lParam
+  If $hWnd<>$hGui Then $GUI_RUNDEFMSG
+  ;GUISetState(@SW_SHOWNOACTIVATE, $hGUI)
+  Return 0
+EndFunc
 
 Func _MenuAdd(ByRef $aMenu,$iType,$sAlias=Null,$vActPar=Null)
     $iMax=UBound($aMenu,1)
