@@ -5,7 +5,7 @@
 #AutoIt3Wrapper_UseUpx=n
 #AutoIt3Wrapper_Res_Description=Corsica Overlay
 #AutoIt3Wrapper_Res_ProductName=
-#AutoIt3Wrapper_Res_Fileversion=1.1.0.1001
+#AutoIt3Wrapper_Res_Fileversion=1.1.0.1002
 #AutoIt3Wrapper_Res_Fileversion_AutoIncrement=y
 #AutoIt3Wrapper_Res_Fileversion_First_Increment=y
 #AutoIt3Wrapper_Run_After=echo %fileversion%>..\VERSION.rc
@@ -55,7 +55,7 @@ Opt("TrayIconHide", 1)
 Opt("GUIOnEventMode",1)
 
 Global Const $sAlias="ctOverlay"
-Global Const $VERSION = "1.1.0.1001"
+Global Const $VERSION = "1.1.0.1002"
 Global $sTitle=$sAlias&" v"&$VERSION
 
 
@@ -190,6 +190,12 @@ Func _ProcMacro($sString,$isClip=0)
         If $iHour=0 Then $iHour=12
         $sTime=$iHour&$iMin&$sMeridiem
         $sString=StringReplace($sString,"{@TIME}",$sTime)
+    EndIf
+    If StringRegExp($sString,"\{@RAND(?:\:(\d{1,}))?\}") Then
+        Local $aMatch=StringRegExp($sString,"\{@RAND(?:\:(\d{1,}))?\}",2)
+        Local $iLen=16
+        If UBound($aMatch)>1 Then $iLen=$aMatch[1]
+        $sString=StringReplace($sString,$aMatch[0],_genRand($iLen))
     EndIf
     $sString=StringReplace($sString,"{@clip}",StringStripWS(ClipGet(),3))
     ; Macro Interpreter
@@ -1396,3 +1402,14 @@ Func __WinAPI_IsBadWritePtr($pAddress, $iLength)
 	Return $aCall[0]
 EndFunc   ;==>_WinAPI_IsBadWritePtr
 #EndRegion ;3P Helper Funcs
+
+Func _genRand($iLen=16)
+  Local $sRet,$aTmp[3]
+  For $i=1 To $iLen
+    $aTmp[0]=Chr(Random(65,90,1)) ;A-Z
+    $aTmp[1]=Chr(Random(97,122,1)) ;a-z
+    $aTmp[2]=Chr(Random(48,57,1)) ;0-9  Next
+    $sRet&=$aTmp[Random(0,2,1)]
+  Next
+  Return $sRet
+EndFunc
