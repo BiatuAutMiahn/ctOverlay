@@ -5,7 +5,7 @@
 #AutoIt3Wrapper_UseUpx=n
 #AutoIt3Wrapper_Res_Description=Corsica Overlay
 #AutoIt3Wrapper_Res_ProductName=
-#AutoIt3Wrapper_Res_Fileversion=1.1.0.1002
+#AutoIt3Wrapper_Res_Fileversion=1.1.0.1006
 #AutoIt3Wrapper_Res_Fileversion_AutoIncrement=y
 #AutoIt3Wrapper_Res_Fileversion_First_Increment=y
 #AutoIt3Wrapper_Run_After=echo %fileversion%>..\VERSION.rc
@@ -55,7 +55,7 @@ Opt("TrayIconHide", 1)
 Opt("GUIOnEventMode",1)
 
 Global Const $sAlias="ctOverlay"
-Global Const $VERSION = "1.1.0.1002"
+Global Const $VERSION = "1.1.0.1006"
 Global $sTitle=$sAlias&" v"&$VERSION
 
 
@@ -299,11 +299,18 @@ EndFunc
 
 Func _ctxClipTikClip()
     Local $sClip=StringStripWS(ClipGet(),3)
-    If StringLeft($sClip,1)='#' Then $sClip=StringTrimLeft($sClip,1)
-    $sUrI="https://na.myconnectwise.net/v4_6_release/services/system_io/Service/fv_sr100_request.rails?service_recid="&$sClip&"&companyName=corsica"
+    ;If StringRegExp($sClip,"^(?:\w+) Ticket #(\d{4,}) - .*$") Then
+    ;  Local $aSplit=StringRegExp($sClip,"^(?:\w+) Ticket #(\d{4,}) - .*$",2)
+    ;  $sUrI="https://na.myconnectwise.net/v4_6_release/services/system_io/Service/fv_sr100_request.rails?service_recid="&$aSplit[1]&"&companyName=corsica"
+    ;  __ClipPutHyperlink($sUrI,$aSplit[0])
+    ;Else
+      If StringLeft($sClip,1)='#' Then $sClip=StringTrimLeft($sClip,1)
+      $sUrI="https://na.myconnectwise.net/v4_6_release/services/system_io/Service/fv_sr100_request.rails?service_recid="&$sClip&"&companyName=corsica"
+      __ClipPutHyperlink($sUrI,'#'&$sClip)
+    ;EndIf
     ;$sHtml="<p class=MsoNormal style='margin-bottom:0in;line-height:normal;mso-pagination:none;mso-layout-grid-align:none;text-autospace:none'><span style='font-family:'Consolas',serif;mso-font-kerning:0pt'><a href='"&$sClip&"'><span\r\nstyle=\'font-family:Consolas;mso-bidi-font-family:Consolas;color:windowtext\'>#"&$sClip&"</span></a></span><o:p></o:p></p>"
-    __ClipPutHyperlink($sUrI,'#'&$sClip)
 EndFunc
+
 
 Func _ctxGetPinParIdx()
     For $i=0 To UBound($aPins,1)-1
