@@ -1091,7 +1091,7 @@ Func _ctxReloadFull()
 EndFunc
 
 Func _MacroMgr_Main_Init()
-    Global $gMacroMgr_hWnd=GUICreate($gMacroMgr_sTitle,$gMacroMgr_iGuiW,$gMacroMgr_iGuiH,-1,-1,-1,$WS_EX_TOOLWINDOW,$hGUI)
+    Global $gMacroMgr_hWnd=GUICreate($gMacroMgr_sTitle,$gMacroMgr_iGuiW,$gMacroMgr_iGuiH,-1,-1,-1)
     GUISetFont(8.5,400,0,"Consolas",$gMacroMgr_hWnd)
     Global $gMacroMgr_idTree=GUICtrlCreateTreeView($iMargin-2,$iMargin,$gMacroMgr_iPaneAW,$gMacroMgr_iGuiH-$gMacroMgr_iBtnH-($iMargin*3),BitOR($TVS_HASBUTTONS, $TVS_HASLINES, $TVS_SHOWSELALWAYS),$WS_EX_CLIENTEDGE)
     Global $gMacroMgr_hTree=GUICtrlGetHandle($gMacroMgr_idTree)
