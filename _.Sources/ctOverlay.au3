@@ -69,6 +69,13 @@ Global $gDll_hShCore = DllOpen("Shcore.dll")
 
 Global $g_sDataDir=@LocalAppDataDir&"\InfinitySys\ctOverlay"
 Global $gsConfig=$g_sDataDir&"\ctOverlay.ini"
+
+If StringInStr($CmdLineRaw,"~!Install") Or Not FileExists($gsConfig) Then
+  ctInstall()
+  If Not FileExists($gsConfig) Then FileClose(FileOpen($gsConfig,2))
+  Exit 0
+EndIf
+
 ;FileDelete($gsConfig)
 ;Global $gidAuthSep, $gidAuthAdd, $gidClip, $gidClipSend, $gidClipSendMacro, $gidClipSendRaw, $gidMainSepA, $gidMainSepB, $gidCtxDismiss, $gidCtxExit, $gCtxMain, $gidAuth, $gidCtxClipOpenSN
 ;Global $gidClipWatchMenu
@@ -1507,4 +1514,29 @@ Func _genRand($iLen=16)
     $sRet&=$aTmp[Random(0,2,1)]
   Next
   Return $sRet
+EndFunc
+
+Func ctInstall()
+  If @Compiled Then
+    Local $bStartup,$bDesktop,$bStartMenu
+    If MsgBox(32+4,$sTitle,"Would you like to run at startup?")==6 Then $bStartup=1
+    If MsgBox(32+4,$sTitle,"Would you like to add to the desktop shortcut?")==6 Then $bDesktop=1
+    If MsgBox(32+4,$sTitle,"Would you like to add to the Start Menu?")==6 Then $bStartMenu=1
+    If $bStartup Or $bDesktop Or $bStartMenu Then
+      FileCopy(@AutoItExe,$g_sDataDir&"\ctOverlay.exe",1)
+    EndIf
+    If $bStartup Then
+      RegWrite("HKCU\Software\Microsoft\Windows\CurrentVersion\Run","ctOverlay","REG_SZ",$g_sDataDir&"\ctOverlay.exe")
+    EndIf
+    If $bDesktop Then
+      FileCreateShortcut($g_sDataDir&"\ctOverlay.exe",@DesktopDir&"\ctOverlay.lnk",$g_sDataDir)
+    EndIf
+    If $bStartMenu Then
+      FileCreateShortcut($g_sDataDir&"\ctOverlay.exe",@ProgramsDir&"\ctOverlay.lnk",$g_sDataDir)
+    EndIf
+    If MsgBox(32+4,$sTitle,"Would you like to run now?")==6 Then
+      Run($g_sDataDir&"\ctOverlay.exe",$g_sDataDir,@SW_SHOW)
+      Exit 0
+    EndIf
+  EndIf
 EndFunc
