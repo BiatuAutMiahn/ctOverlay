@@ -77,6 +77,7 @@ Global $gsConfig=$g_sDataDir&"\ctOverlay.ini"
 
 ;==> Macro Manager Vars
 Global $gMacroMgr_sTitle="Macro Manager"
+Global $gMacroMgr_hWnd
 Global $gMacroMgr_iGuiW=512+32+5
 Global $gMacroMgr_iGuiH=331
 Global $gMacroMgr_iPaneAW=128+32
@@ -962,25 +963,29 @@ Func WM_MENUSELECT($hWnd, $iMsg, $iwParam, $ilParam)
 EndFunc
 
 Func WM_SYSCOMMAND($hWnd,$Msg,$wParam,$lParam)
-    If $hWnd<>$hGui Then $GUI_RUNDEFMSG
-    If BitAND($wParam,0xFFF0)=0xF010 Then Return 0
+    If $hWnd=$hGui Then
+      If BitAND($wParam,0xFFF0)=0xF010 Then Return 0
+    EndIf
     Return $GUI_RUNDEFMSG
 EndFunc   ;==>WM_SYSCOMMAND
 
 Func WM_NCHITTEST($hWnd,$iMsg,$wParam,$lParam)
     #forceref $hWnd, $iMsg, $wParam, $lParam
+    If $hWnd=$gMacroMgr_hWnd Then $GUI_RUNDEFMSG
     If $hWnd<>$hGui Then $GUI_RUNDEFMSG
     Return $HTCAPTION
 EndFunc   ;==>WM_NCHITTEST
 
 Func WM_MOVING($hWnd,$iMsg,$wParam,$lParam)
   #forceref $hWnd, $iMsg, $wParam, $lParam
+    If $hWnd=$gMacroMgr_hWnd Then $GUI_RUNDEFMSG
     If $hWnd=$hGui Then Return 1
     Return $GUI_RUNDEFMSG
 EndFunc   ;==>WM_MOVING
 
 Func WM_NOOP($hWnd,$iMsg,$wParam,$lParam)
   #forceref $hWnd, $iMsg, $wParam, $lParam
+  If $hWnd=$gMacroMgr_hWnd Then $GUI_RUNDEFMSG
   If $hWnd<>$hGui Then $GUI_RUNDEFMSG
   ;GUISetState(@SW_SHOWNOACTIVATE, $hGUI)
   Return 0
