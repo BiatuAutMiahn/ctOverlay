@@ -5,7 +5,7 @@
 #AutoIt3Wrapper_UseUpx=n
 #AutoIt3Wrapper_Res_Description=Corsica Overlay
 #AutoIt3Wrapper_Res_ProductName=
-#AutoIt3Wrapper_Res_Fileversion=1.1.0.1006
+#AutoIt3Wrapper_Res_Fileversion=1.1.0.1007
 #AutoIt3Wrapper_Res_Fileversion_AutoIncrement=y
 #AutoIt3Wrapper_Res_Fileversion_First_Increment=y
 #AutoIt3Wrapper_Run_After=echo %fileversion%>..\VERSION.rc
@@ -55,7 +55,7 @@ Opt("TrayIconHide", 1)
 Opt("GUIOnEventMode",1)
 
 Global Const $sAlias="ctOverlay"
-Global Const $VERSION = "1.1.0.1006"
+Global Const $VERSION = "1.1.0.1007"
 Global $sTitle=$sAlias&" v"&$VERSION
 
 
@@ -1083,6 +1083,7 @@ EndFunc
 
 #Region ;Macro Manager
 
+
 Func _ctxReloadFull()
   Dim $aMacros[1][3]
   $aMacros[0][0]=0
@@ -1162,7 +1163,6 @@ Func _MacroMgr_Main_WM_NOTIFY($hWnd, $iMsg, $iwParam, $ilParam)
     $iCode = DllStructGetData($tNMHDR, "Code")
     Switch $hWndFrom
         Case $gMacroMgr_hEdit
-
         Case $hWndTreeview
             Switch $iCode
                 Case $TVN_ITEMCHANGEDW, $TVN_ITEMCHANGEDA
