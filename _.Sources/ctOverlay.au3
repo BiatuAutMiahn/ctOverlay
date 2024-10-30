@@ -1025,6 +1025,7 @@ Func _InitDefMenu()
     ;_MenuAdd($aCtxMenu,2,'Pins',$aCtxPins)
     _MenuAdd($aCtxMenu,0)
     _MenuAdd($aCtxMenu,1,'Dismiss','_ctxReload')
+    _MenuAdd($aCtxMenu,1,'Reload','_ctxReloadFull')
     _MenuAdd($aCtxMenu,1,'Exit','_ctxExit')
     _reloadMacroCtx()
 EndFunc
@@ -1076,6 +1077,13 @@ EndFunc
 #EndRegion OverlayUI
 
 #Region ;Macro Manager
+
+Func _ctxReloadFull()
+  Dim $aMacros[1][3]
+  $aMacros[0][0]=0
+  _LoadMacros()
+  _ctxReload()
+EndFunc
 
 Func _MacroMgr_Main_Init()
     Global $gMacroMgr_hWnd=GUICreate($gMacroMgr_sTitle,$gMacroMgr_iGuiW,$gMacroMgr_iGuiH,-1,-1,-1,$WS_EX_TOOLWINDOW,$hGUI)
