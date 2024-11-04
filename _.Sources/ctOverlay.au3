@@ -5,7 +5,7 @@
 #AutoIt3Wrapper_UseUpx=n
 #AutoIt3Wrapper_Res_Description=Corsica Overlay
 #AutoIt3Wrapper_Res_ProductName=
-#AutoIt3Wrapper_Res_Fileversion=1.1.0.1008
+#AutoIt3Wrapper_Res_Fileversion=1.1.0.1016
 #AutoIt3Wrapper_Res_Fileversion_AutoIncrement=y
 #AutoIt3Wrapper_Res_Fileversion_First_Increment=y
 #AutoIt3Wrapper_Run_After=echo %fileversion%>..\VERSION.rc
@@ -55,7 +55,7 @@ Opt("TrayIconHide", 1)
 Opt("GUIOnEventMode",1)
 
 Global Const $sAlias="ctOverlay"
-Global Const $VERSION = "1.1.0.1008"
+Global Const $VERSION = "1.1.0.1016"
 Global $sTitle=$sAlias&" v"&$VERSION
 
 
@@ -71,8 +71,8 @@ Global $g_sDataDir=@LocalAppDataDir&"\InfinitySys\ctOverlay"
 Global $gsConfig=$g_sDataDir&"\ctOverlay.ini"
 
 If StringInStr($CmdLineRaw,"~!Install") Or Not FileExists($gsConfig) Then
+  If Not FileExists($gsConfig) Then FileClose(FileOpen($gsConfig,10))
   ctInstall()
-  If Not FileExists($gsConfig) Then FileClose(FileOpen($gsConfig,2))
   Exit 0
 EndIf
 
@@ -1523,7 +1523,7 @@ Func ctInstall()
     If MsgBox(32+4,$sTitle,"Would you like to add to the desktop shortcut?")==6 Then $bDesktop=1
     If MsgBox(32+4,$sTitle,"Would you like to add to the Start Menu?")==6 Then $bStartMenu=1
     If $bStartup Or $bDesktop Or $bStartMenu Then
-      FileCopy(@AutoItExe,$g_sDataDir&"\ctOverlay.exe",1)
+      FileCopy(@AutoItExe,$g_sDataDir&"\ctOverlay.exe",9)
     EndIf
     If $bStartup Then
       RegWrite("HKCU\Software\Microsoft\Windows\CurrentVersion\Run","ctOverlay","REG_SZ",$g_sDataDir&"\ctOverlay.exe")
