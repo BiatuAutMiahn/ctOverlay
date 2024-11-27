@@ -88,14 +88,15 @@ Global $gMacroMgr_hWnd
 Global $gMacroMgr_iGuiW=512+32+5
 Global $gMacroMgr_iGuiH=331
 Global $gMacroMgr_iPaneAW=128+32
-Global $gMacroMgr_iBtnH=23
-Global $gMacroMgr_iBtnT=$gMacroMgr_iGuiH-28
-Global $gMacroMgr_iBtnW=($gMacroMgr_iPaneAW/4)-1
+Global $gMacroMgr_iBtnH=25
+Global $gMacroMgr_iBtnT=$gMacroMgr_iGuiH-46
+Global $gMacroMgr_iBtnW=($gMacroMgr_iPaneAW/3)-1
 Global $gMacroMgr_sPath=""
 Global $gMacroMgr_iSel=-1
 Global $gMacroMgr_idTreeRoot=-1
 Global $gMacroMgr_iGuiState
 Global $gMacroMgr_aTreeMap[1][6]
+Global $gMacroMgr_bMkUState
 Global $aMacros[1][3]
 $aMacros[0][0]=0
 _LoadMacros()
@@ -759,8 +760,16 @@ Func _ctxDoMacro()
     Local $iIdx=_ctxGetItemIdxById($aCtxMenu[$iMenuIdx][2],@GUI_CtrlId)
     If @error Then Return False
     Local $sMacro=_ProcMacro($aMacros[$iIdx][2])
-    If Not waitForIt() Then Return
-    Send($sMacro,0)
+    Switch $aMacros[$iIdx][3]
+      Case 0
+        If Not waitForIt() Then Return
+        Send($sMacro,0)
+      Case 1
+        ClipPut($sMacro)
+      Case 2
+        Local $sClip=StringStripWS(ClipGet(),3)
+        __ClipPutHyperlink($sMacro,$sClip)
+    EndSwitch
 EndFunc
 
 Func _ctxGetCtxMenuIdx(ByRef $aMenu,$sAlias)
@@ -1092,7 +1101,7 @@ EndFunc
 
 
 Func _ctxReloadFull()
-  Dim $aMacros[1][3]
+  Dim $aMacros[1][4]
   $aMacros[0][0]=0
   _LoadMacros()
   _ctxReload()
@@ -1101,7 +1110,7 @@ EndFunc
 Func _MacroMgr_Main_Init()
     Global $gMacroMgr_hWnd=GUICreate($gMacroMgr_sTitle,$gMacroMgr_iGuiW,$gMacroMgr_iGuiH,-1,-1,-1)
     GUISetFont(8.5,400,0,"Consolas",$gMacroMgr_hWnd)
-    Global $gMacroMgr_idTree=GUICtrlCreateTreeView($iMargin-2,$iMargin,$gMacroMgr_iPaneAW,$gMacroMgr_iGuiH-$gMacroMgr_iBtnH-($iMargin*3),BitOR($TVS_HASBUTTONS, $TVS_HASLINES, $TVS_SHOWSELALWAYS),$WS_EX_CLIENTEDGE)
+    Global $gMacroMgr_idTree=GUICtrlCreateTreeView($iMargin-2,$iMargin,$gMacroMgr_iPaneAW,$gMacroMgr_iGuiH-($gMacroMgr_iBtnH*2)-($iMargin*3),BitOR($TVS_HASBUTTONS, $TVS_HASLINES, $TVS_SHOWSELALWAYS),$WS_EX_CLIENTEDGE)
     Global $gMacroMgr_hTree=GUICtrlGetHandle($gMacroMgr_idTree)
     Global $gMacroMgr_idTreeRoot=-1
     ;Global $gMacroMgr_hTreeRoot=GUICtrlGetHandle($gMacroMgr_idTreeRoot)
@@ -1110,18 +1119,23 @@ Func _MacroMgr_Main_Init()
     Global $gMacroMgr_idLabel=GUICtrlCreateInput("Macro Label",$gMacroMgr_iPaneAW+$iMargin,$iMargin-1,$gMacroMgr_iGuiW-$gMacroMgr_iPaneAW-$iMargin-2,21,$WS_CHILD+$WS_BORDER,$WS_EX_CLIENTEDGE)
     Global $gMacroMgr_hLabel=GUICtrlGetHandle($gMacroMgr_idLabel)
     _GUICtrlEdit_SetCueBanner($gMacroMgr_hLabel,"Macro Label",1)
-    Global $gMacroMgr_idEdit=GUICtrlCreateEdit("Macro Definition",$gMacroMgr_iPaneAW+$iMargin,$iMargin-1+21+$iMargin,$gMacroMgr_iGuiW-$gMacroMgr_iPaneAW-$iMargin-2,$gMacroMgr_iGuiH-$gMacroMgr_iBtnH-($iMargin*3)-24,$WS_CHILD+$WS_BORDER,$WS_EX_CLIENTEDGE)
+    Global $gMacroMgr_idEdit=GUICtrlCreateEdit("Macro Definition",$gMacroMgr_iPaneAW+$iMargin,$iMargin-1+21+$iMargin,$gMacroMgr_iGuiW-$gMacroMgr_iPaneAW-$iMargin-2,$gMacroMgr_iGuiH-($gMacroMgr_iBtnH*2)-($iMargin*3)-24,$WS_CHILD+$WS_BORDER,$WS_EX_CLIENTEDGE)
     Global $gMacroMgr_hEdit=GUICtrlGetHandle($gMacroMgr_idEdit)
     Global $gMacroMgr_idDiscard=GUICtrlCreateButton("Discard", $gMacroMgr_iPaneAW+$iMargin*2, $gMacroMgr_iBtnT, 52, $gMacroMgr_iBtnH)
     Global $gMacroMgr_idSave=GUICtrlCreateButton("Save", $gMacroMgr_iPaneAW+($iMargin*2)+52, $gMacroMgr_iBtnT, 52, $gMacroMgr_iBtnH)
     Global $gMacroMgr_idTest=GUICtrlCreateButton("Test", $gMacroMgr_iPaneAW+($iMargin*2)+104, $gMacroMgr_iBtnT, 52, $gMacroMgr_iBtnH)
+    GUICtrlCreateLabel("Type:",$gMacroMgr_iPaneAW+($iMargin*2)+160,$gMacroMgr_iBtnT+4,28)
+    Global $gMacroMgr_idTypeRadSend=GUICtrlCreateRadio("Send Keys",$gMacroMgr_iPaneAW+($iMargin*2)+196,$gMacroMgr_iBtnT,72,$gMacroMgr_iBtnH)
+    Global $gMacroMgr_idTypeRadClip=GUICtrlCreateRadio("To Clipboard",$gMacroMgr_iPaneAW+($iMargin*2)+196+72+4,$gMacroMgr_iBtnT,96,$gMacroMgr_iBtnH)
+    Global $gMacroMgr_idTypeRadMkU=GUICtrlCreateCheckbox("mkUrl",$gMacroMgr_iPaneAW+($iMargin*2)+196+72+4,$gMacroMgr_iBtnT+$gMacroMgr_iBtnH-4)
     GUISetOnEvent($GUI_EVENT_CLOSE,"_MacroMgr_Main_Close",$gMacroMgr_hWnd)
     GUICtrlSetOnEvent($gMacroMgr_idTreeAdd,"_MacroMgr_Main_Add")
     GUICtrlSetOnEvent($gMacroMgr_idTreeRm,"_MacroMgr_Main_Del")
     GUICtrlSetOnEvent($gMacroMgr_idDiscard,"_MacroMgr_Main_Discard")
     GUICtrlSetOnEvent($gMacroMgr_idSave,"_MacroMgr_Main_Save")
     GUICtrlSetOnEvent($gMacroMgr_idTest,"_MacroMgr_Main_Test")
-
+    GUICtrlSetOnEvent($gMacroMgr_idTypeRadSend,"_MacroMgr_Main_DoType")
+    GUICtrlSetOnEvent($gMacroMgr_idTypeRadClip,"_MacroMgr_Main_DoType")
     If $aMacros[0][0]=0 Then
         _MacroMgr_Main_GuiState(0)
     Else
@@ -1133,12 +1147,23 @@ Func _MacroMgr_Main_Init()
     GUISetState(@SW_SHOW,$gMacroMgr_hWnd)
 EndFunc
 
+Func _MacroMgr_Main_DoType()
+    If _chkGetChecked($gMacroMgr_idTypeRadSend) Then
+      ;$gMacroMgr_bMkUState=_chkGetChecked($gMacroMgr_idTypeRadMkU)
+      GUICtrlSetState($gMacroMgr_idTypeRadMkU,$GUI_DISABLE)
+    ElseIf _chkGetChecked($gMacroMgr_idTypeRadClip) Then
+      GUICtrlSetState($gMacroMgr_idTypeRadMkU,$GUI_ENABLE)
+      ;GUICtrlSetState($gMacroMgr_idTypeRadMkU,$gMacroMgr_bMkUState?$GUI_CHECKED:$GUI_UNCHECKED)
+    EndIf
+EndFunc
+
 Func _MacroMgr_Main_WM_COMMAND($hWnd, $iMsg, $wParam, $lParam)
     If $hWnd<>$gMacroMgr_hWnd Then Return $GUI_RUNDEFMSG
     Switch BitAND($wParam, 0xFFFF); idCtrl
         Case $gMacroMgr_idLabel
             Switch BitShift($wParam, 16); iCode
-                Case $EN_CHANGE
+              Case $EN_CHANGE
+                    If $gMacroMgr_iSel>UBound($aMacros,1)-1 Then Return $GUI_RUNDEFMSG
                     If GUICtrlRead($gMacroMgr_idLabel)=$aMacros[$gMacroMgr_iSel][1] Then
                         _MacroMgr_Main_GuiCtrlNotState(16+32)
                     Else
@@ -1185,6 +1210,20 @@ Func _MacroMgr_Main_WM_NOTIFY($hWnd, $iMsg, $iwParam, $ilParam)
                         $gMacroMgr_iSel=$iIdx
                         GUICtrlSetData($gMacroMgr_idLabel,$aMacros[$iIdx][1])
                         GUICtrlSetData($gMacroMgr_idEdit,$aMacros[$iIdx][2])
+                        Switch $aMacros[$iIdx][3]
+                          Case 0
+                            GUICtrlSetState($gMacroMgr_idTypeRadSend,$GUI_CHECKED)
+                            GUICtrlSetState($gMacroMgr_idTypeRadClip,$GUI_UNCHECKED)
+                            GUICtrlSetState($gMacroMgr_idTypeRadMkU,$GUI_DISABLE+$GUI_UNCHECKED)
+                          Case 1
+                            GUICtrlSetState($gMacroMgr_idTypeRadSend,$GUI_UNCHECKED)
+                            GUICtrlSetState($gMacroMgr_idTypeRadClip,$GUI_CHECKED)
+                            GUICtrlSetState($gMacroMgr_idTypeRadMkU,$GUI_ENABLE+$GUI_UNCHECKED)
+                          Case 2
+                            GUICtrlSetState($gMacroMgr_idTypeRadSend,$GUI_UNCHECKED)
+                            GUICtrlSetState($gMacroMgr_idTypeRadClip,$GUI_CHECKED)
+                            GUICtrlSetState($gMacroMgr_idTypeRadMkU,$GUI_ENABLE+$GUI_CHECKED)
+                        EndSwitch
                         _MacroMgr_Main_GuiState(2)
                     Next
             EndSwitch
@@ -1200,6 +1239,8 @@ Func _MacroMgr_Main_Close()
     GUICtrlSetOnEvent($gMacroMgr_idDiscard,"")
     GUICtrlSetOnEvent($gMacroMgr_idSave,"")
     GUICtrlSetOnEvent($gMacroMgr_idTest,"")
+    GUICtrlSetOnEvent($gMacroMgr_idTypeRadClip,"")
+    GUICtrlSetOnEvent($gMacroMgr_idTypeRadSend,"")
     GUIRegisterMsg($WM_NOTIFY, "")
     GUIRegisterMsg($WM_COMMAND, "")
     GUIDelete($gMacroMgr_hWnd)
@@ -1295,7 +1336,10 @@ Func _MacroMgr_Main_Del()
     GUIRegisterMsg($WM_COMMAND, "_MacroMgr_Main_WM_COMMAND")
     GUICtrlSetData($gMacroMgr_idLabel,"")
     GUICtrlSetData($gMacroMgr_idEdit,"")
-    _MacroMgr_Main_GuiState(1)
+    GUICtrlSetState($gMacroMgr_idTypeRadSend,$GUI_CHECKED)
+    GUICtrlSetState($gMacroMgr_idTypeRadClip,$GUI_UNCHECKED)
+    GUICtrlSetState($gMacroMgr_idTypeRadMkU,$GUI_UNCHECKED)
+    _MacroMgr_Main_GuiState($aMacros[0][0]>0)
 EndFunc
 
 Func _MacroMgr_Main_Discard()
@@ -1308,6 +1352,17 @@ Func _MacroMgr_Main_Save()
     If Not _MacroMgr_Main_ModPrompt("sav") Then Return
     $aMacros[$gMacroMgr_iSel][1]=GUICtrlRead($gMacroMgr_idLabel)
     $aMacros[$gMacroMgr_iSel][2]=GUICtrlRead($gMacroMgr_idEdit)
+    Local $iType=0
+    If _chkGetChecked($gMacroMgr_idTypeRadSend) Then
+      $iType=0
+    ElseIf _chkGetChecked($gMacroMgr_idTypeRadClip) Then
+      If _chkGetChecked($gMacroMgr_idTypeRadMkU) Then
+        $iType=2
+      Else
+        $iType=1
+      EndIf
+    EndIf
+    $aMacros[$gMacroMgr_iSel][3]=$iType
     _MacroMgr_Main_MacroLoad()
     _SaveMacros()
     _reloadMacroCtx()
@@ -1315,9 +1370,28 @@ EndFunc
 
 Func _MacroMgr_Main_Test()
     Local $sMacro=GUICtrlRead($gMacroMgr_idEdit)
-    If Not waitForIt() Then Return
-    ConsoleWrite(StringFormat(":%s:",$sMacro)&@CRLF)
-    Send(_ProcMacro($sMacro),0)
+    Local $iType=0
+    If _chkGetChecked($gMacroMgr_idTypeRadSend) Then
+      $iType=0
+    ElseIf _chkGetChecked($gMacroMgr_idTypeRadClip) Then
+      If _chkGetChecked($gMacroMgr_idTypeRadMkU) Then
+        $iType=2
+      Else
+        $iType=1
+      EndIf
+    EndIf
+    $sMacro=_ProcMacro($sMacro)
+    ConsoleWrite(StringFormat(":%s:%s",$sMacro,$iType)&@CRLF)
+    Switch $iType
+      Case 0
+        If Not waitForIt() Then Return
+        Send($sMacro,0)
+      Case 1
+        ClipPut($sMacro)
+      Case 2
+        Local $sClip=StringStripWS(ClipGet(),3)
+        __ClipPutHyperlink($sMacro,$sClip)
+    EndSwitch
 EndFunc
 
 Func _MacroMgr_Main_ModPrompt($sOp)
@@ -1335,18 +1409,30 @@ EndFunc
 Func _MacroMgr_Add_Add()
     Local $hSel=_GUICtrlTreeView_GetSelection($gMacroMgr_hTree)
     Local $sLabel=GUICtrlRead($gMacroMgr_idAddLabel)
-    ;MsgBox(64,"",)
+    Local $iType=0
+    If _chkGetChecked($gMacroMgr_idTypeRadSend) Then
+      $iType=0
+    ElseIf _chkGetChecked($gMacroMgr_idTypeRadClip) Then
+      If _chkGetChecked($gMacroMgr_idTypeRadMkU) Then
+        $iType=2
+      Else
+        $iType=1
+      EndIf
+      ;$gMacroMgr_idTypeRadMkU
+    EndIf
     For $i=1 To $aMacros[0][0]
         If StringLower($aMacros[$i][0])=StringLower($gMacroMgr_sPath) And $aMacros[$i][1]=$sLabel Then
             MsgBox(16,$gMacroMgr_sTitle,"A Macro with this name already exists.",0,$gMacroMgr_hWnd)
             Return
         EndIf
     Next
-    _MacroAdd($sLabel,"",$gMacroMgr_sPath)
+    _MacroAdd($sLabel,"",$gMacroMgr_sPath,$iType)
     _MacroMgr_Add_Close()
     _MacroMgr_Main_MacroLoad()
+    _SaveMacros()
     _GUICtrlTreeView_SetSelected($gMacroMgr_hTree,$hSel,1)
     _reloadMacroCtx()
+    _MacroMgr_Main_GuiState(1)
 EndFunc
 
 Func _MacroMgr_Main_GuiState($iState)
@@ -1366,9 +1452,15 @@ Func _MacroMgr_Main_GuiState($iState)
             ;GUICtrlSetState($gMacroMgr_idTreeRoot,$GUI_DISABLE+$GUI_EXPAND)
             $xState=1
         Case 2 ; Macro Selected
-            $xState=1+2+4+8+64
+            $xState=1+2+4+8+64+128
     EndSwitch
     _MacroMgr_Main_GuiCtrlState($xState)
+EndFunc
+
+Func _chkGetChecked($vCtrl)
+    If Not IsHWnd($vCtrl) Then $vCtrl=GUICtrlGetHandle($vCtrl)
+    If _SendMessage($vCtrl,$BM_GETCHECK)=$BST_CHECKED Then Return True
+    Return False
 EndFunc
 
 Func _MacroMgr_Main_GuiCtrlNotState($xState)
@@ -1384,13 +1476,16 @@ Func _MacroMgr_Main_GuiCtrlState($xState)
     GUICtrlSetState($gMacroMgr_idDiscard,BitAND($xState,16)?$GUI_ENABLE:$GUI_DISABLE)
     GUICtrlSetState($gMacroMgr_idSave,BitAND($xState,32)?$GUI_ENABLE:$GUI_DISABLE)
     GUICtrlSetState($gMacroMgr_idTest,BitAND($xState,64)?$GUI_ENABLE:$GUI_DISABLE)
+    GUICtrlSetState($gMacroMgr_idTypeRadSend,BitAND($xState,128)?$GUI_ENABLE:$GUI_DISABLE)
+    GUICtrlSetState($gMacroMgr_idTypeRadClip,BitAND($xState,128)?$GUI_ENABLE:$GUI_DISABLE)
+    GUICtrlSetState($gMacroMgr_idTypeRadMkU,BitAND($xState,128)?$GUI_ENABLE:$GUI_DISABLE)
     $gMacroMgr_iGuiState=$xState
 EndFunc
 
 #EndRegion ;Macro Manager
 
 Func _LoadMacros()
-    Local $aMacroDat=IniReadSection($gsConfig,"Macros")
+    Local $sPath,$sMacro,$iType=0,$aMacroDat=IniReadSection($gsConfig,"Macros")
     If @error Then Return
     For $i=1 To $aMacroDat[0][0]
         If Not StringInStr($aMacroDat[$i][1],'|') Then ContinueLoop
@@ -1399,23 +1494,27 @@ Func _LoadMacros()
         If $sPath<>'' Then $sPath=BinaryToString(_Base64Decode($sPath))
         Local $sMacro=$aTmp[2]
         If $sMacro<>'' Then $sMacro=BinaryToString(_Base64Decode($sMacro))
-        _MacroAdd($aMacroDat[$i][0],$sMacro,$sPath)
+        If $aTmp[0]>2 Then
+          $iType=$aTmp[3]
+        EndIf
+        _MacroAdd($aMacroDat[$i][0],$sMacro,$sPath,$iType)
     Next
 EndFunc
 
 Func _SaveMacros()
     IniDelete($gsConfig,"Macros")
     For $i=1 To $aMacros[0][0]
-        IniWrite($gsConfig,"Macros",$aMacros[$i][1],StringFormat("%s|%s",_Base64Encode($aMacros[$i][0]),_Base64Encode($aMacros[$i][2])))
+        IniWrite($gsConfig,"Macros",$aMacros[$i][1],StringFormat("%s|%s|%s",_Base64Encode($aMacros[$i][0]),_Base64Encode($aMacros[$i][2]),$aMacros[$i][3]))
     Next
 EndFunc
 
-Func _MacroAdd($sLabel,$sMacro="",$sPath="")
+Func _MacroAdd($sLabel,$sMacro="",$sPath="",$iType=0)
     Local $iMax=UBound($aMacros,1)
-    ReDim $aMacros[$iMax+1][3]
+    ReDim $aMacros[$iMax+1][4]
     $aMacros[$iMax][0]=$sPath
     $aMacros[$iMax][1]=$sLabel
     $aMacros[$iMax][2]=$sMacro
+    $aMacros[$iMax][3]=$iType
     $aMacros[0][0]=$iMax
 EndFunc
 
