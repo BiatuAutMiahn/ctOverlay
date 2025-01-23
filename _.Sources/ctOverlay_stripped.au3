@@ -1,10 +1,11 @@
 #pragma compile(AutoItExecuteAllowed, True)
+#Region
 #AutoIt3Wrapper_Icon=Res\ctdkgrrd.ico
 #AutoIt3Wrapper_Outfile_x64=..\_.rc\ctOverlay.exe
 #AutoIt3Wrapper_UseUpx=n
 #AutoIt3Wrapper_Res_Description=Corsica Overlay
 #AutoIt3Wrapper_Res_ProductName=
-#AutoIt3Wrapper_Res_Fileversion=1.1.0.1010
+#AutoIt3Wrapper_Res_Fileversion=1.1.0.1017
 #AutoIt3Wrapper_Res_Fileversion_AutoIncrement=y
 #AutoIt3Wrapper_Res_Fileversion_First_Increment=y
 #AutoIt3Wrapper_Run_After=echo %fileversion%>..\VERSION.rc
@@ -12,6 +13,7 @@
 #AutoIt3Wrapper_Run_Au3Stripper=y
 #Au3Stripper_Parameters=/tl /debug /mo
 #AutoIt3Wrapper_Change2CUI=n
+#EndRegion
 Global Const $KLF_ACTIVATE = 0x00000001
 Global Const $KLF_NOTELLSHELL = 0x00000080
 Global Const $KLF_REORDER = 0x00000008
@@ -832,6 +834,7 @@ Global Const $IDCLOSE = 8
 Global Const $IDHELP = 9
 Global Const $IDTRYAGAIN = 10
 Global Const $IDCONTINUE = 11
+#Region Global Variables and Constants
 Global $__g_vEnum, $__g_vExt = 0
 Global $__g_iRGBMode = 1
 Global Const $tagOSVERSIONINFO = 'struct;dword OSVersionInfoSize;dword MajorVersion;dword MinorVersion;dword BuildNumber;dword PlatformId;wchar CSDVersion[128];endstruct'
@@ -853,6 +856,10 @@ Global Const $LR_CREATEDIBSECTION = 0x2000
 Global Const $LR_COPYFROMRESOURCE = 0x4000
 Global Const $LR_SHARED = 0x8000
 Global Const $__tagCURSORINFO = "dword Size;dword Flags;handle hCursor;" & "struct;long X;long Y;endstruct"
+#EndRegion Global Variables and Constants
+#Region Functions list
+#EndRegion Functions list
+#Region Public Functions
 Func _WinAPI_CreateFile($sFileName, $iCreation, $iAccess = 4, $iShare = 0, $iAttributes = 0, $tSecurity = 0)
 Local $iDA = 0, $iSM = 0, $iCD = 0, $iFA = 0
 If BitAND($iAccess, 1) <> 0 Then $iDA = BitOR($iDA, $GENERIC_EXECUTE)
@@ -973,6 +980,8 @@ If @error Then Return SetError(@error, @extended, False)
 $iWritten = $aCall[4]
 Return $aCall[0]
 EndFunc
+#EndRegion Public Functions
+#Region Internal Functions
 Func __CheckErrorArrayBounds(Const ByRef $aData, ByRef $iStart, ByRef $iEnd, $nDim = 1, $iDim = $UBOUND_DIMENSIONS)
 If Not IsArray($aData) Then Return SetError(1, 0, 1)
 If UBound($aData, $iDim) <> $nDim Then Return SetError(2, 0, 1)
@@ -1047,6 +1056,12 @@ $iColor = _WinAPI_SwitchColor($iColor)
 EndIf
 Return $iColor
 EndFunc
+#EndRegion Internal Functions
+#Region Global Variables and Constants
+#EndRegion Global Variables and Constants
+#Region Functions list
+#EndRegion Functions list
+#Region Public Functions
 Func _WinAPI_CharToOem($sStr)
 Local $aCall, $sRetStr = "", $nLen = StringLen($sStr) + 1, $iStart = 1
 While $iStart < $nLen
@@ -1309,12 +1324,15 @@ Return BitOR($iValue, 0xFFFF8000)
 EndIf
 Return BitAND($iValue, 0x00007FFF)
 EndFunc
+#EndRegion Public Functions
+#Region Global Variables and Constants
 Global Const $FORMAT_MESSAGE_ALLOCATE_BUFFER = 0x00000100
 Global Const $FORMAT_MESSAGE_IGNORE_INSERTS = 0x00000200
 Global Const $FORMAT_MESSAGE_FROM_STRING = 0x00000400
 Global Const $FORMAT_MESSAGE_FROM_HMODULE = 0x00000800
 Global Const $FORMAT_MESSAGE_FROM_SYSTEM = 0x00001000
 Global Const $FORMAT_MESSAGE_ARGUMENT_ARRAY = 0x00002000
+#EndRegion Global Variables and Constants
 Func _WinAPI_Beep($iFreq = 500, $iDuration = 1000)
 Local $aCall = DllCall("kernel32.dll", "bool", "Beep", "dword", $iFreq, "dword", $iDuration)
 If @error Then Return SetError(@error, @extended, False)
@@ -1421,6 +1439,7 @@ Local Const $STR_STRIPTRAILING = 2
 Local $sError = "COM Error encountered in " & @ScriptName & " (" & $oCOMError.Scriptline & ") :" & @CRLF &  $sPrefix & "Number        " & @TAB & "= 0x" & Hex($oCOMError.Number, 8) & " (" & $oCOMError.Number & ")" & @CRLF &  $sPrefix & "WinDescription" & @TAB & "= " & StringStripWS($oCOMError.WinDescription, $STR_STRIPTRAILING) & @CRLF &  $sPrefix & "Description   " & @TAB & "= " & StringStripWS($oCOMError.Description, $STR_STRIPTRAILING) & @CRLF &  $sPrefix & "Source        " & @TAB & "= " & $oCOMError.Source & @CRLF &  $sPrefix & "HelpFile      " & @TAB & "= " & $oCOMError.HelpFile & @CRLF &  $sPrefix & "HelpContext   " & @TAB & "= " & $oCOMError.HelpContext & @CRLF &  $sPrefix & "LastDllError  " & @TAB & "= " & $oCOMError.LastDllError & @CRLF &  $sPrefix & "Retcode       " & @TAB & "= 0x" & Hex($oCOMError.retcode)
 Return $sError
 EndFunc
+#Region Global Variables and Constants
 Global Const $DUPLICATE_CLOSE_SOURCE = 0x00000001
 Global Const $DUPLICATE_SAME_ACCESS = 0x00000002
 Global Const $OBJ_BITMAP = 7
@@ -1457,6 +1476,10 @@ Global Const $OEM_FIXED_FONT = 10
 Global Const $SYSTEM_FONT = 13
 Global Const $SYSTEM_FIXED_FONT = 16
 Global Const $DEFAULT_PALETTE = 15
+#EndRegion Global Variables and Constants
+#Region Functions list
+#EndRegion Functions list
+#Region Public Functions
 Func _WinAPI_CloseHandle($hObject)
 Local $aCall = DllCall("kernel32.dll", "bool", "CloseHandle", "handle", $hObject)
 If @error Then Return SetError(@error, @extended, False)
@@ -1537,7 +1560,13 @@ Local $aCall = DllCall("kernel32.dll", "bool", "SetHandleInformation", "handle",
 If @error Then Return SetError(@error, @extended, False)
 Return $aCall[0]
 EndFunc
+#EndRegion Public Functions
+#Region Global Variables and Constants
 Global $__g_hHeap = 0
+#EndRegion Global Variables and Constants
+#Region Functions list
+#EndRegion Functions list
+#Region Public Functions
 Func _WinAPI_CreateBuffer($iLength, $pBuffer = 0, $bAbort = True)
 $pBuffer = __HeapReAlloc($pBuffer, $iLength, 0, $bAbort)
 If @error Then Return SetError(@error, @extended, 0)
@@ -1658,6 +1687,8 @@ DllCall('ntdll.dll', 'none', 'RtlZeroMemory', 'struct*', $pMemory, 'ulong_ptr', 
 If @error Then Return SetError(@error, @extended, 0)
 Return 1
 EndFunc
+#EndRegion Public Functions
+#Region Internal Functions
 Func __HeapAlloc($iSize, $bAbort = False)
 Local $aCall
 If Not $__g_hHeap Then
@@ -1707,6 +1738,7 @@ Local $aCall = DllCall('kernel32.dll', 'int', 'HeapValidate', 'handle', $__g_hHe
 If @error Then Return SetError(@error, @extended, False)
 Return $aCall[0]
 EndFunc
+#EndRegion Internal Functions
 Global Const $SND_APPLICATION = 0x00000080
 Global Const $SND_ALIAS = 0x00010000
 Global Const $SND_ALIAS_ID = 0x00110000
@@ -1731,6 +1763,11 @@ Global Const $SND_ALIAS_SYSTEMHAND = 'SystemHand'
 Global Const $SND_ALIAS_SYSTEMQUESTION = 'SystemQuestion'
 Global Const $SND_ALIAS_SYSTEMSTART = 'SystemStart'
 Global Const $SND_ALIAS_SYSTEMWELCOME = 'SystemWelcome'
+#Region Global Variables and Constants
+#EndRegion Global Variables and Constants
+#Region Functions list
+#EndRegion Functions list
+#Region Public Functions
 Func _WinAPI_ArrayToStruct(Const ByRef $aData, $iStart = 0, $iEnd = -1)
 If __CheckErrorArrayBounds($aData, $iStart, $iEnd) Then Return SetError(@error + 10, @extended, 0)
 Local $tagStruct = ''
@@ -1887,6 +1924,8 @@ _WinAPI_MoveMemory($tResult, $tStruct1, $aSize[0])
 _WinAPI_MoveMemory(DllStructGetPtr($tResult) + $aSize[0], $tStruct2, $aSize[1])
 Return $tResult
 EndFunc
+#EndRegion Public Functions
+#Region Global Variables and Constants
 Global Const $tagBITMAP = 'struct;long bmType;long bmWidth;long bmHeight;long bmWidthBytes;ushort bmPlanes;ushort bmBitsPixel;ptr bmBits;endstruct'
 Global Const $tagBITMAPV5HEADER = 'struct;dword bV5Size;long bV5Width;long bV5Height;ushort bV5Planes;ushort bV5BitCount;dword bV5Compression;dword bV5SizeImage;long bV5XPelsPerMeter;long bV5YPelsPerMeter;dword bV5ClrUsed;dword bV5ClrImportant;dword bV5RedMask;dword bV5GreenMask;dword bV5BlueMask;dword bV5AlphaMask;dword bV5CSType;int bV5Endpoints[9];dword bV5GammaRed;dword bV5GammaGreen;dword bV5GammaBlue;dword bV5Intent;dword bV5ProfileData;dword bV5ProfileSize;dword bV5Reserved;endstruct'
 Global Const $tagDIBSECTION = $tagBITMAP & ';' & $tagBITMAPINFOHEADER & ';dword dsBitfields[3];ptr dshSection;dword dsOffset'
@@ -1899,6 +1938,10 @@ Global Const $__WINAPICONSTANT_DEFAULT_CHARSET = 1
 Global Const $__WINAPICONSTANT_OUT_DEFAULT_PRECIS = 0
 Global Const $__WINAPICONSTANT_CLIP_DEFAULT_PRECIS = 0
 Global Const $__WINAPICONSTANT_DEFAULT_QUALITY = 0
+#EndRegion Global Variables and Constants
+#Region Functions list
+#EndRegion Functions list
+#Region Public Functions
 Func _WinAPI_BitBlt($hDestDC, $iXDest, $iYDest, $iWidth, $iHeight, $hSrcDC, $iXSrc, $iYSrc, $iROP)
 Local $aCall = DllCall("gdi32.dll", "bool", "BitBlt", "handle", $hDestDC, "int", $iXDest, "int", $iYDest, "int", $iWidth,  "int", $iHeight, "handle", $hSrcDC, "int", $iXSrc, "int", $iYSrc, "dword", $iROP)
 If @error Then Return SetError(@error, @extended, False)
@@ -2127,6 +2170,8 @@ Local $aCall = DllCall("user32.dll", "int", "SetWindowRgn", "hwnd", $hWnd, "hand
 If @error Then Return SetError(@error, @extended, False)
 Return $aCall[0]
 EndFunc
+#EndRegion Public Functions
+#Region Embedded DLL Functions
 Func __AlphaProc()
 Static $pProc = 0
 If Not $pProc Then
@@ -2160,6 +2205,8 @@ EndIf
 EndIf
 Return $pProc
 EndFunc
+#EndRegion Embedded DLL Functions
+#Region Internal Functions
 Func __Init($dData)
 Local $iLength = BinaryLen($dData)
 Local $aCall = DllCall('kernel32.dll', 'ptr', 'VirtualAlloc', 'ptr', 0, 'ulong_ptr', $iLength, 'dword', 0x00001000, 'dword', 0x00000040)
@@ -2168,6 +2215,8 @@ Local $tData = DllStructCreate('byte[' & $iLength & "]", $aCall[0])
 DllStructSetData($tData, 1, $dData)
 Return $aCall[0]
 EndFunc
+#EndRegion Internal Functions
+#Region Global Variables and Constants
 Global Const $DI_MASK = 0x0001
 Global Const $DI_IMAGE = 0x0002
 Global Const $DI_NORMAL = 0x0003
@@ -2183,6 +2232,10 @@ Global Const $DISPLAY_DEVICE_REMOVABLE = 0x00000020
 Global Const $DISPLAY_DEVICE_DISCONNECT = 0x02000000
 Global Const $DISPLAY_DEVICE_REMOTE = 0x04000000
 Global Const $DISPLAY_DEVICE_MODESPRUNED = 0x08000000
+#EndRegion Global Variables and Constants
+#Region Functions list
+#EndRegion Functions list
+#Region Public Functions
 Func _WinAPI_CreateCompatibleDC($hDC)
 Local $aCall = DllCall("gdi32.dll", "handle", "CreateCompatibleDC", "handle", $hDC)
 If @error Then Return SetError(@error, @extended, 0)
@@ -2355,6 +2408,10 @@ $iTwipsPerPixelY = 1440 / _WinAPI_GetDeviceCaps($hDC, $__WINAPICONSTANT_LOGPIXEL
 _WinAPI_ReleaseDC(0, $hDC)
 Return $iTwipsPerPixelY
 EndFunc
+#EndRegion Public Functions
+#Region Internal Functions
+#EndRegion Internal Functions
+#Region Global Variables and Constants
 Global Const $IDC_UNKNOWN = 0
 Global Const $IDC_APPSTARTING = 32650
 Global Const $IDC_ARROW = 32512
@@ -2380,6 +2437,10 @@ Global Const $IDI_SHIELD = 32518
 Global Const $IDI_ERROR = $IDI_HAND
 Global Const $IDI_INFORMATION = $IDI_ASTERISK
 Global Const $IDI_WARNING = $IDI_EXCLAMATION
+#EndRegion Global Variables and Constants
+#Region Functions list
+#EndRegion Functions list
+#Region Public Functions
 Global Const $tagICONINFO = "bool Icon;dword XHotSpot;dword YHotSpot;handle hMask;handle hColor"
 Func _WinAPI_AddIconTransparency($hIcon, $iPercent = 50, $bDelete = False)
 Local $tBITMAP, $hDib = 0, $hResult = 0
@@ -2645,6 +2706,8 @@ Return SetError($iError, 0, 0)
 EndIf
 Return $aCall[2]
 EndFunc
+#EndRegion Public Functions
+#Region Embedded DLL Functions
 Func __TransparencyProc()
 Static $pProc = 0
 If Not $pProc Then
@@ -2656,6 +2719,7 @@ EndIf
 EndIf
 Return $pProc
 EndFunc
+#EndRegion Embedded DLL Functions
 Func _SendMessage($hWnd, $iMsg, $wParam = 0, $lParam = 0, $iReturn = 0, $wParamType = "wparam", $lParamType = "lparam", $sReturnType = "lresult")
 Local $aCall = DllCall("user32.dll", $sReturnType, "SendMessageW", "hwnd", $hWnd, "uint", $iMsg, $wParamType, $wParam, $lParamType, $lParam)
 If @error Then Return SetError(@error, @extended, "")
@@ -2668,6 +2732,7 @@ If @error Then Return SetError(@error, @extended, "")
 If $iReturn >= 0 And $iReturn <= 4 Then Return $aCall[$iReturn]
 Return $aCall
 EndFunc
+#Region Global Variables and Constants
 Global $__g_aInProcess_WinAPI[64][2] = [[0, 0]]
 Global $__g_aWinList_WinAPI[64][2] = [[0, 0]]
 Global Const $GW_HWNDFIRST = 0
@@ -2685,6 +2750,10 @@ Global Const $GWL_STYLE = 0xFFFFFFF0
 Global Const $GWL_EXSTYLE = 0xFFFFFFEC
 Global Const $GWL_USERDATA = 0xFFFFFFEB
 Global Const $__WINAPICONSTANT_WM_SETFONT = 0x0030
+#EndRegion Global Variables and Constants
+#Region Functions list
+#EndRegion Functions list
+#Region Public Functions
 Func _WinAPI_CreateWindowEx($iExStyle, $sClass, $sName, $iStyle, $iX, $iY, $iWidth, $iHeight, $hParent, $hMenu = 0, $hInstance = 0, $pParam = 0)
 If $hInstance = 0 Then $hInstance = _WinAPI_GetModuleHandle("")
 Local $aCall = DllCall("user32.dll", "hwnd", "CreateWindowExW", "dword", $iExStyle, "wstr", $sClass, "wstr", $sName,  "dword", $iStyle, "int", $iX, "int", $iY, "int", $iWidth, "int", $iHeight, "hwnd", $hParent, "handle", $hMenu,  "handle", $hInstance, "struct*", $pParam)
@@ -2898,6 +2967,8 @@ Local $aCall = DllCall("user32.dll", "bool", "UpdateWindow", "hwnd", $hWnd)
 If @error Then Return SetError(@error, @extended, False)
 Return $aCall[0]
 EndFunc
+#EndRegion Public Functions
+#Region Internal Functions
 Func __WinAPI_EnumWindowsAdd($hWnd, $sClass = "")
 If $sClass = "" Then $sClass = _WinAPI_GetClassName($hWnd)
 $__g_aWinList_WinAPI[0][0] += 1
@@ -2924,6 +2995,8 @@ ReDim $__g_aWinList_WinAPI[64][2]
 $__g_aWinList_WinAPI[0][0] = 0
 $__g_aWinList_WinAPI[0][1] = 64
 EndFunc
+#EndRegion Internal Functions
+#Region Global Variables and Constants
 Global Const $FLASHW_CAPTION = 0x00000001
 Global Const $FLASHW_TRAY = 0x00000002
 Global Const $FLASHW_TIMER = 0x00000004
@@ -2932,7 +3005,11 @@ Global Const $tagUPDATELAYEREDWINDOWINFO = 'dword Size;hwnd hDstDC;long DstX;lon
 Global Const $tagWINDOWINFO = 'dword Size;struct;long rWindow[4];endstruct;struct;long rClient[4];endstruct;dword Style;dword ExStyle;dword WindowStatus;uint cxWindowBorders;uint cyWindowBorders;word atomWindowType;word CreatorVersion'
 Global Const $tagWNDCLASS = 'uint Style;ptr hWndProc;int ClsExtra;int WndExtra;ptr hInstance;ptr hIcon;ptr hCursor;ptr hBackground;ptr MenuName;ptr ClassName'
 Global Const $tagWNDCLASSEX = 'uint Size;uint Style;ptr hWndProc;int ClsExtra;int WndExtra;ptr hInstance;ptr hIcon;ptr hCursor;ptr hBackground;ptr MenuName;ptr ClassName;ptr hIconSm'
+#EndRegion Global Variables and Constants
+#Region Functions list
+#EndRegion Functions list
 Global Const $tagFLASHWINFO = "uint Size;hwnd hWnd;dword Flags;uint Count;dword TimeOut"
+#Region Public Functions
 Func _WinAPI_AdjustWindowRectEx(ByRef $tRECT, $iStyle, $iExStyle = 0, $bMenu = False)
 Local $aCall = DllCall('user32.dll', 'bool', 'AdjustWindowRectEx', 'struct*', $tRECT, 'dword', $iStyle, 'bool', $bMenu,  'dword', $iExStyle)
 If @error Then Return SetError(@error, @extended, False)
@@ -3449,6 +3526,8 @@ Local $aCall = DllCall("user32.dll", "hwnd", "WindowFromPoint", "struct", $tPOIN
 If @error Then Return SetError(@error, @extended, 0)
 Return $aCall[0]
 EndFunc
+#EndRegion Public Functions
+#Region Internal Functions
 Func __EnumDefaultProc($pData, $lParam)
 #forceref $lParam
 Local $iLength = _WinAPI_StrLen($pData)
@@ -3460,6 +3539,8 @@ $__g_vEnum[$__g_vEnum[0]] = ''
 EndIf
 Return 1
 EndFunc
+#EndRegion Internal Functions
+#Region Global Variables and Constants
 Global Const $tagOSVERSIONINFOEX = $tagOSVERSIONINFO & ';ushort ServicePackMajor;ushort ServicePackMinor;ushort SuiteMask;byte ProductType;byte Reserved'
 Global Const $tagRAWINPUTDEVICE = 'struct;ushort UsagePage;ushort Usage;dword Flags;hwnd hTarget;endstruct'
 Global Const $tagRAWINPUTHEADER = 'struct;dword Type;dword Size;handle hDevice;wparam wParam;endstruct'
@@ -3476,6 +3557,10 @@ Global Const $tagRID_INFO_MOUSE = 'dword Size;dword Type;' & $tagRID_DEVICE_INFO
 Global Const $tagRID_INFO_KEYBOARD = 'dword Size;dword Type;' & $tagRID_DEVICE_INFO_KEYBOARD
 Global Const $tagRID_INFO_HID = 'dword Size;dword Type;' & $tagRID_DEVICE_INFO_HID & ';dword Unused[2]'
 Global Const $tagUSEROBJECTFLAGS = 'int Inherit;int Reserved;dword Flags'
+#EndRegion Global Variables and Constants
+#Region Functions list
+#EndRegion Functions list
+#Region Public Functions
 Func _WinAPI_ActivateKeyboardLayout($hLocale, $iFlag = 0)
 Local $aCall = DllCall('user32.dll', 'handle', 'ActivateKeyboardLayout', 'handle', $hLocale, 'uint', $iFlag)
 If @error Then Return SetError(@error, @extended, 0)
@@ -4192,6 +4277,7 @@ $__g_vEnum[$__g_vEnum[0][0]][$i] = DllStructGetData($tEPFI, $i + 2) * $iSize
 Next
 Return 1
 EndFunc
+#EndRegion Public Functions
 Global Const $GUI_EVENT_SINGLE = 0
 Global Const $GUI_EVENT_ARRAY = 1
 Global Const $GUI_EVENT_NONE = 0
@@ -5319,7 +5405,12 @@ Global Const $COINIT_APARTMENTTHREADED = 0x02
 Global Const $COINIT_DISABLE_OLE1DDE = 0x04
 Global Const $COINIT_MULTITHREADED = 0x00
 Global Const $COINIT_SPEED_OVER_MEMORY = 0x08
+#Region Global Variables and Constants
 Global Const $__tagWinAPICom_GUID = "struct;ulong Data1;ushort Data2;ushort Data3;byte Data4[8];endstruct"
+#EndRegion Global Variables and Constants
+#Region Functions list
+#EndRegion Functions list
+#Region Public Functions
 Func _WinAPI_CLSIDFromProgID($sProgID)
 Local $tGUID = DllStructCreate($__tagWinAPICom_GUID)
 Local $aCall = DllCall('ole32.dll', 'long', 'CLSIDFromProgID', 'wstr', $sProgID, 'struct*', $tGUID)
@@ -5393,6 +5484,7 @@ If @error Then Return SetError(@error, @extended, 0)
 If $aCall[0] Then Return SetError(10, $aCall[0], 0)
 Return 1
 EndFunc
+#EndRegion Public Functions
 Global Const $FR_PRIVATE = 0x10
 Global Const $FR_NOT_ENUM = 0x20
 Global Const $COMPRESSION_BITMAP_PNG = 0
@@ -5775,6 +5867,7 @@ Global Const $PT_BEZIERTO = 4
 Global Const $PT_LINETO = 2
 Global Const $PT_MOVETO = 6
 Global Const $PT_CLOSEFIGURE = 1
+#Region Global Variables and Constants
 Global Const $tagBITMAPV4HEADER = 'struct;dword bV4Size;long bV4Width;long bV4Height;ushort bV4Planes;ushort bV4BitCount;dword bV4Compression;dword bV4SizeImage;long bV4XPelsPerMeter;long bV4YPelsPerMeter;dword bV4ClrUsed;dword bV4ClrImportant;dword bV4RedMask;dword bV4GreenMask;dword bV4BlueMask;dword bV4AlphaMask;dword bV4CSType;int bV4Endpoints[9];dword bV4GammaRed;dword bV4GammaGreen;dword bV4GammaBlue;endstruct'
 Global Const $tagCOLORADJUSTMENT = 'ushort Size;ushort Flags;ushort IlluminantIndex;ushort RedGamma;ushort GreenGamma;ushort BlueGamma;ushort ReferenceBlack;ushort ReferenceWhite;short Contrast;short Brightness;short Colorfulness;short RedGreenTint'
 Global Const $tagDEVMODE = 'wchar DeviceName[32];ushort SpecVersion;ushort DriverVersion;ushort Size;ushort DriverExtra;dword Fields;short Orientation;short PaperSize;short PaperLength;short PaperWidth;short Scale;short Copies;short DefaultSource;short PrintQuality;short Color;short Duplex;short YResolution;short TTOption;short Collate;wchar FormName[32];ushort Unused1;dword Unused2[3];dword Nup;dword Unused3;dword ICMMethod;dword ICMIntent;dword MediaType;dword DitherType;dword Reserved1;dword Reserved2;dword PanningWidth;dword PanningHeight'
@@ -5794,6 +5887,10 @@ Global Const $tagOUTLINETEXTMETRIC = 'struct;uint otmSize;' & $tagTEXTMETRIC & '
 Global Const $tagPAINTSTRUCT = 'hwnd hDC;int fErase;dword rPaint[4];int fRestore;int fIncUpdate;byte rgbReserved[32]'
 Global Const $tagRGNDATAHEADER = 'struct;dword Size;dword Type;dword Count;dword RgnSize;' & $tagRECT & ';endstruct'
 Global Const $tagXFORM = 'float eM11;float eM12;float eM21;float eM22;float eDx;float eDy'
+#EndRegion Global Variables and Constants
+#Region Functions list
+#EndRegion Functions list
+#Region Public Functions
 Func _WinAPI_AbortPath($hDC)
 Local $aCall = DllCall('gdi32.dll', 'bool', 'AbortPath', 'handle', $hDC)
 If @error Then Return SetError(@error, @extended, False)
@@ -8188,6 +8285,8 @@ Local $aCall = DllCall('user32.dll', 'hwnd', 'WindowFromDC', 'handle', $hDC)
 If @error Then Return SetError(@error, @extended, 0)
 Return $aCall[0]
 EndFunc
+#EndRegion Public Functions
+#Region Internal Functions
 Func __EnumDisplayMonitorsProc($hMonitor, $hDC, $pRECT, $lParam)
 #forceref $hDC, $lParam
 __Inc($__g_vEnum)
@@ -8246,6 +8345,7 @@ Else
 Return 1
 EndIf
 EndFunc
+#EndRegion Internal Functions
 Global $__g_hGDIPBrush = 0
 Global $__g_hGDIPDll = 0
 Global $__g_hGDIPPen = 0
@@ -11337,6 +11437,9 @@ Global Const $SID_SYSTEM_MANDATORY_LEVEL = "S-1-16-16384"
 Global Const $SID_PROTECTED_PROCESS_MANDATORY_LEVEL = "S-1-16-20480"
 Global Const $SID_SECURE_PROCESS_MANDATORY_LEVEL = "S-1-16-28672"
 Global Const $SID_ALL_SERVICES = "S-1-5-80-0"
+#Region Functions list
+#EndRegion Functions list
+#Region Public Functions
 Func _Security__AdjustTokenPrivileges($hToken, $bDisableAll, $tNewState, $iBufferLen, $tPrevState = 0, $pRequired = 0)
 Local $aCall = DllCall("advapi32.dll", "bool", "AdjustTokenPrivileges", "handle", $hToken, "bool", $bDisableAll, "struct*", $tNewState, "dword", $iBufferLen, "struct*", $tPrevState, "struct*", $pRequired)
 If @error Then Return SetError(@error, @extended, False)
@@ -11517,7 +11620,13 @@ DllStructSetData($tSID, "Data", DllStructGetData($tBuffer, "Data"))
 DllCall("kernel32.dll", "handle", "LocalFree", "handle", $pSID)
 Return $tSID
 EndFunc
+#EndRegion Public Functions
+#Region Functions list
+#EndRegion Functions list
+#Region Global Variables and Constants
 Global Const $tagMEMMAP = "handle hProc;ulong_ptr Size;ptr Mem"
+#EndRegion Global Variables and Constants
+#Region Public Functions
 Func _MemFree(ByRef $tMemMap)
 Local $pMemory = DllStructGetData($tMemMap, "Mem")
 Local $hProcess = DllStructGetData($tMemMap, "hProc")
@@ -11608,6 +11717,8 @@ Local $aCall = DllCall("kernel32.dll", "bool", "VirtualFreeEx", "handle", $hProc
 If @error Then Return SetError(@error, @extended, False)
 Return $aCall[0]
 EndFunc
+#EndRegion Public Functions
+#Region Internal Functions
 Func __Mem_OpenProcess($iAccess, $bInherit, $iPID, $bDebugPriv = False)
 Local $aCall = DllCall("kernel32.dll", "handle", "OpenProcess", "dword", $iAccess, "bool", $bInherit, "dword", $iPID)
 If @error Then Return SetError(@error, @extended, 0)
@@ -11635,7 +11746,12 @@ EndIf
 DllCall("kernel32.dll", "bool", "CloseHandle", "handle", $hToken)
 Return SetError($iError, $iExtended, $iRet)
 EndFunc
+#EndRegion Internal Functions
+#Region Global Variables and Constants
 Global $__g_hGUICtrl_LastWnd
+#EndRegion Global Variables and Constants
+#Region Functions list
+#EndRegion Functions list
 Func __GUICtrl_SendMsg($hWnd, $iMsg, $iIndex, ByRef $tItem, $tBuffer = 0, $bRetItem = False, $iElement = -1, $bRetBuffer = False, $iElementMax = $iElement)
 If $iElement > 0 Then
 DllStructSetData($tItem, $iElement, DllStructGetPtr($tBuffer))
@@ -13024,6 +13140,9 @@ Global Const $URLIS_HASQUERY = 6
 Global Const $URLIS_NOHISTORY = 2
 Global Const $URLIS_OPAQUE = 1
 Global Const $URLIS_URL = 0
+#Region Functions list
+#EndRegion Functions list
+#Region Public Functions
 Func _WinAPI_CommandLineToArgv($sCmd)
 Local $aRet[1] = [0]
 $sCmd = StringStripWS($sCmd, $STR_STRIPLEADING + $STR_STRIPTRAILING)
@@ -13443,6 +13562,8 @@ Local $aCall = DllCall('shlwapi.dll', 'bool', 'UrlIsW', 'wstr', $sUrl, 'uint', $
 If @error Then Return SetError(@error, @extended, False)
 Return $aCall[0]
 EndFunc
+#EndRegion Public Functions
+#Region Internal Functions
 Func __US($sString, $iLength = 0)
 If $iLength Then
 $sString = StringLeft($sString, $iLength)
@@ -13456,6 +13577,8 @@ DllStructSetData($tUS, 3, DllStructGetPtr($tUS, 4))
 DllStructSetData($tUS, 4, $sString)
 Return $tUS
 EndFunc
+#EndRegion Internal Functions
+#Region Global Variables and Constants
 Global Const $tagNOTIFYICONDATA = 'struct;dword Size;hwnd hWnd;uint ID;uint Flags;uint CallbackMessage;ptr hIcon;wchar Tip[128];dword State;dword StateMask;wchar Info[256];uint Version;wchar InfoTitle[64];dword InfoFlags;endstruct'
 Global Const $tagNOTIFYICONDATA_V3 = $tagNOTIFYICONDATA & ';' & $tagGUID
 Global Const $tagNOTIFYICONDATA_V4 = $tagNOTIFYICONDATA_V3 & ';ptr hBalloonIcon;'
@@ -13464,6 +13587,10 @@ Global Const $tagSHFILEINFO = 'ptr hIcon;int iIcon;dword Attributes;wchar Displa
 Global Const $tagSHFILEOPSTRUCT = 'hwnd hWnd;uint Func;ptr From;ptr To;dword Flags;int fAnyOperationsAborted;ptr hNameMappings;ptr ProgressTitle'
 Global Const $tagSHFOLDERCUSTOMSETTINGS = 'dword Size;dword Mask;ptr GUID;ptr WebViewTemplate;dword SizeWVT;ptr WebViewTemplateVersion;ptr InfoTip;dword SizeIT;ptr CLSID;dword Flags;ptr IconFile;dword SizeIF;int IconIndex;ptr Logo;dword SizeL'
 Global Const $tagSHSTOCKICONINFO = 'dword Size;ptr hIcon;int SysImageIndex;int iIcon;wchar Path[260]'
+#EndRegion Global Variables and Constants
+#Region Functions list
+#EndRegion Functions list
+#Region Public Functions
 Func _WinAPI_DefSubclassProc($hWnd, $iMsg, $wParam, $lParam)
 Local $aCall = DllCall('comctl32.dll', 'lresult', 'DefSubclassProc', 'hwnd', $hWnd, 'uint', $iMsg, 'wparam', $wParam,  'lparam', $lParam)
 If @error Then Return SetError(@error, @extended, 0)
@@ -13882,6 +14009,7 @@ DllCall('shell32.dll', 'none', 'SHUpdateImageW', 'wstr', $sIcon, 'int', $iIndex,
 If @error Then Return SetError(@error, @extended, 0)
 Return 1
 EndFunc
+#EndRegion Public Functions
 Global Const $BS_GROUPBOX = 0x0007
 Global Const $BS_BOTTOM = 0x0800
 Global Const $BS_CENTER = 0x0300
@@ -15461,6 +15589,7 @@ Global Const $E_NOTIMPL = 0x80004001
 Global Const $E_OUTOFMEMORY = 0x8007000E
 Global Const $E_POINTER = 0x80004003
 Global Const $E_UNEXPECTED = 0x8000FFFF
+#Region Global Variables and Constants
 Global $__g_pFRBuffer = 0, $__g_iFRBufferSize = 16385
 Global Const $tagDEVNAMES = 'ushort DriverOffset;ushort DeviceOffset;ushort OutputOffset;ushort Default'
 Global Const $tagFINDREPLACE = 'dword Size;hwnd hOwner;ptr hInstance;dword Flags;ptr FindWhat;ptr ReplaceWith;ushort FindWhatLen;ushort ReplaceWithLen;lparam lParam;ptr Hook;ptr TemplateName'
@@ -15469,6 +15598,10 @@ Global Const $tagPAGESETUPDLG = 'dword Size;hwnd hOwner;ptr hDevMode;ptr hDevNam
 Global Const $tagPRINTDLG = (@AutoItX64 ? '' : 'align 1;') & 'dword Size;hwnd hOwner;handle hDevMode;handle hDevNames;handle hDC;dword Flags;word FromPage;word ToPage;word MinPage;word MaxPage;word Copies;handle hInstance;lparam lParam;ptr PrintHook;ptr SetupHook;ptr PrintTemplateName;ptr SetupTemplateName;handle hPrintTemplate;handle hSetupTemplate'
 Global Const $tagPRINTDLGEX = 'dword Size;hwnd hOwner;handle hDevMode;handle hDevNames;handle hDC;dword Flags;dword Flags2;dword ExclusionFlags;dword NumPageRanges;dword MaxPageRanges;ptr PageRanges;dword MinPage;dword MaxPage;dword Copies;handle hInstance;ptr PrintTemplateName;lparam lParam;dword NumPropertyPages;ptr hPropertyPages;dword StartPage;dword ResultAction'
 Global Const $tagPRINTPAGERANGE = 'dword FromPage;dword ToPage'
+#EndRegion Global Variables and Constants
+#Region Functions list
+#EndRegion Functions list
+#Region Public Functions
 Func _WinAPI_BrowseForFolderDlg($sRoot = '', $sText = '', $iFlags = 0, $pBrowseProc = 0, $lParam = 0, $hParent = 0)
 Local Const $tagBROWSEINFO = 'hwnd hwndOwner;ptr pidlRoot;ptr pszDisplayName; ptr lpszTitle;uint ulFlags;ptr lpfn;lparam lParam;int iImage'
 Local $tBROWSEINFO = DllStructCreate($tagBROWSEINFO & ';wchar[' & (StringLen($sText) + 1) & '];wchar[260]')
@@ -15827,6 +15960,8 @@ _WinAPI_CoTaskMemFree($pBLOB)
 If $iError Then Return SetError($iError, 0, 0)
 Return $aRet
 EndFunc
+#EndRegion Public Functions
+#Region Internal Functions
 Func __OFNDlg($iDlg, $sTitle, $sInitDir, $sFilters, $iDefFilter, $sDefFile, $sDefExt, $iFlags, $iFlagsEx, $pOFNProc, $pData, $hParent)
 Local $vError[1] = [0]
 If BitAND($iFlags, $OFN_ALLOWMULTISELECT) = 0 Then $vError = ''
@@ -15942,6 +16077,8 @@ $aFiles[1] = StringMid($sPath, 1, StringInStr($sPath, "\", $STR_NOCASESENSEBASIC
 $aFiles[2] = StringMid($sPath, StringInStr($sPath, "\", $STR_NOCASESENSEBASIC, -1) + 1)
 Return $aFiles
 EndFunc
+#EndRegion Internal Functions
+#Region Global Variables and Constants
 Global $_g_ArrayDisplay_bUserFunc = False
 Global $_g_ArrayDisplay_hListView
 Global $_g_ArrayDisplay_iTranspose
@@ -15969,6 +16106,9 @@ Global Const $ARRAYDISPLAY_VERBOSE = 8
 Global Const $ARRAYDISPLAY_NOROW = 64
 Global Const $ARRAYDISPLAY_CHECKERROR = 128
 Global Const $_ARRAYCONSTANT_tagLVITEM = "struct;uint Mask;int Item;int SubItem;uint State;uint StateMask;ptr Text;int TextMax;int Image;lparam Param;" &  "int Indent;int GroupID;uint Columns;ptr pColumns;ptr piColFmt;int iGroup;endstruct"
+#EndRegion Global Variables and Constants
+#Region Functions list
+#EndRegion Functions list
 Func __ArrayDisplay_Share(Const ByRef $aArray, $sTitle = Default, $sArrayRange = Default, $iFlags = Default, $vUser_Separator = Default, $sHeader = Default, $iDesired_Colwidth = Default, $hUser_Function = Default, $bDebug = True, Const $_iScriptLineNumber = @ScriptLineNumber, Const $_iCallerError = @error, Const $_iCallerExtended = @extended)
 Local $sMsgBoxTitle = (($bDebug) ? ("_DebugArrayDisplay") : ("_ArrayDisplay"))
 If $_g_ArrayDisplay_bUserFunc Then
@@ -15995,6 +16135,7 @@ Local $iColAlign = BitAND($iFlags, 6)
 Local $iVerbose = Int(BitAND($iFlags, $ARRAYDISPLAY_VERBOSE))
 $_g_ArrayDisplay_iDisplayRow = Int(BitAND($iFlags, $ARRAYDISPLAY_NOROW) = 0)
 Local $iButtonBorder = (($bDebug) ? (40) : (20))
+#Region Check valid array
 Local $sMsg = "", $iRet = 1
 Local $fTimer = 0
 If IsArray($aArray) Then
@@ -16031,6 +16172,8 @@ Else
 Return SetError($iRet, 0, 0)
 EndIf
 EndIf
+#EndRegion Check valid array
+#Region Check array range
 Local $iCW_ColWidth = Number($vUser_Separator)
 Local $sCurr_Separator = Opt("GUIDataSeparatorChar")
 If $vUser_Separator = "" Then $vUser_Separator = $sCurr_Separator
@@ -16092,6 +16235,8 @@ If $sTipData Then $sTipData &= " - "
 $sTipData &= "Transposed"
 EndIf
 If $sArrayRange Or $_g_ArrayDisplay_iTranspose Then $_g_ArrayDisplay_aArray = __ArrayDisplay_CreateSubArray()
+#EndRegion Check array range
+#Region Check custom header
 $_g_ArrayDisplay_asHeader = StringSplit($sHeader, $sCurr_Separator, $STR_NOCOUNT)
 If UBound($_g_ArrayDisplay_asHeader) = 0 Then Dim $_g_ArrayDisplay_asHeader[1] = [""]
 $sHeader = "Row"
@@ -16117,6 +16262,8 @@ $sHeader &= $sCurr_Separator & "Col " & $j
 Next
 EndIf
 If Not $_g_ArrayDisplay_iDisplayRow Then $sHeader = StringTrimLeft($sHeader, 4)
+#EndRegion Check custom header
+#Region Generate Sort index for columns
 __ArrayDisplay_SortIndexes(0, -1)
 Local $hTimer = TimerInit()
 __ArrayDisplay_SortIndexes(1, 1)
@@ -16125,6 +16272,8 @@ If $fTimer * $_g_ArrayDisplay_nCols < 1000 Then
 __ArrayDisplay_SortIndexes(2, $_g_ArrayDisplay_nCols)
 Else
 EndIf
+#EndRegion Generate Sort index for columns
+#Region GUI and Listview generation
 If $iVerbose And ($_g_ArrayDisplay_nRows * $_g_ArrayDisplay_nCols) > 1000 Then
 SplashTextOn($sMsgBoxTitle, "Preparing display" & @CRLF & @CRLF & "Please be patient", 300, 100)
 EndIf
@@ -16190,8 +16339,10 @@ $iColumnPrev = $iColumn
 __ArrayDisplay_HeaderSetItemFormat($hHeader, $iColumn, 0x00004000 + $_g_ArrayDisplay_iSortDir + $iColAlign / 2)
 EndIf
 $_g_ArrayDisplay_aIndex = $_g_ArrayDisplay_aIndexes[0]
+#EndRegion GUI and Listview generation
 Local $p__ArrayDisplay_NotifyHandler = DllCallbackGetPtr(DllCallbackRegister("__ArrayDisplay_NotifyHandler", "lresult", "hwnd;uint;wparam;lparam;uint_ptr;dword_ptr"))
 DllCall("comctl32.dll", "bool", "SetWindowSubclass", "hwnd", $hGUI, "ptr", $p__ArrayDisplay_NotifyHandler, "uint_ptr", 0, "dword_ptr", 0)
+#Region Adjust dialog width
 Local $iWidth = 40, $iColWidth = 0, $aiColWidth[$iColFill]
 Local $iColWidthHeader, $iMin_ColW = 55
 For $i = 0 To $iColFill - 1
@@ -16236,11 +16387,13 @@ $iWidth = @DesktopWidth - 100
 ElseIf $iWidth < $iMinSize Then
 $iWidth = $iMinSize
 EndIf
+#EndRegion Adjust dialog width
 Local $iScrollBarSize = 0
 If $iHeight = (@DesktopHeight - 100) Then $iScrollBarSize = 15
 WinMove($hGUI, "", (@DesktopWidth - $iWidth + $iScrollBarSize) / 2, (@DesktopHeight - $iHeight) / 2, $iWidth + $iScrollBarSize, $iHeight)
 $aiGUISize = WinGetClientSize($hGUI)
 GUICtrlSetPos($idListView, 0, 0, $iWidth, $aiGUISize[1] - $iButtonBorder)
+#Region Create bottom infos
 Local $iButtonWidth_1 = $aiGUISize[0] / 2
 Local $iButtonWidth_2 = $aiGUISize[0] / 3
 Local $idCopy_ID = 9999, $idCopy_Data = 99999, $idData_Label = 99999, $idUser_Func = 99999, $idExit_Script = 99999
@@ -16268,6 +16421,7 @@ GUICtrlSetResizing($idCopy_Data, $_ARRAYCONSTANT_GUI_DOCKRIGHT + $_ARRAYCONSTANT
 GUICtrlSetResizing($idData_Label, $_ARRAYCONSTANT_GUI_DOCKLEFT + $_ARRAYCONSTANT_GUI_DOCKBOTTOM + $_ARRAYCONSTANT_GUI_DOCKHEIGHT)
 GUICtrlSetResizing($idUser_Func, $_ARRAYCONSTANT_GUI_DOCKHCENTER + $_ARRAYCONSTANT_GUI_DOCKBOTTOM + $_ARRAYCONSTANT_GUI_DOCKHEIGHT)
 GUICtrlSetResizing($idExit_Script, $_ARRAYCONSTANT_GUI_DOCKRIGHT + $_ARRAYCONSTANT_GUI_DOCKBOTTOM + $_ARRAYCONSTANT_GUI_DOCKHEIGHT)
+#EndRegion Create bottom infos
 GUISetState(@SW_SHOW, $hGUI)
 If $fTimer > 1000 And Not $sArrayRange Then
 Beep(750, 250)
@@ -16275,6 +16429,7 @@ ToolTip("Sorting Action can take as long as " & Ceiling($fTimer / 1000) & " sec"
 Sleep(3000)
 ToolTip("")
 EndIf
+#Region GUI Handling events
 Local $iOnEventMode = Opt("GUIOnEventMode", 0), $aMsg
 While 1
 $aMsg = GUIGetMsg($_ARRAYCONSTANT_GUI_EVENT_ARRAY)
@@ -16365,6 +16520,7 @@ Exit
 EndSwitch
 EndIf
 WEnd
+#EndRegion GUI Handling events
 __ArrayDisplay_CleanUp($hGUI, $iCoordMode, $iOnEventMode, $_iCallerError, $_iCallerExtended, $p__ArrayDisplay_NotifyHandler)
 Return SetError($_iCallerError, $_iCallerExtended, 1)
 EndFunc
@@ -18904,8 +19060,13 @@ Global Const $VFT2_UNKNOWN = 0x00000000
 Global Const $VFT2_FONT_RASTER = 0x00000001
 Global Const $VFT2_FONT_TRUETYPE = 0x00000003
 Global Const $VFT2_FONT_VECTOR = 0x00000002
+#Region Global Variables and Constants
 Global $__g_vVal
 Global Const $tagVS_FIXEDFILEINFO = 'dword Signature;dword StrucVersion;dword FileVersionMS;dword FileVersionLS;dword ProductVersionMS;dword ProductVersionLS;dword FileFlagsMask;dword FileFlags;dword FileOS;dword FileType;dword FileSubtype;dword FileDateMS;dword FileDateLS'
+#EndRegion Global Variables and Constants
+#Region Functions list
+#EndRegion Functions list
+#Region Public Functions
 Func _WinAPI_BeginUpdateResource($sFilePath, $bDelete = False)
 Local $aCall = DllCall('kernel32.dll', 'handle', 'BeginUpdateResourceW', 'wstr', $sFilePath, 'bool', $bDelete)
 If @error Then Return SetError(@error, @extended, 0)
@@ -19312,6 +19473,8 @@ If $__g_vEnum Then Return SetError($__g_vEnum, 0, 0)
 __Inc($__g_vEnum, -1)
 Return $__g_vEnum
 EndFunc
+#EndRegion Public Functions
+#Region Internal Functions
 Func __EnumResLanguagesProc($hModule, $iType, $iName, $iLanguage, $lParam)
 #forceref $hModule, $iType, $iName, $lParam
 __Inc($__g_vEnum)
@@ -19399,6 +19562,7 @@ Local $pData = _WinAPI_LockResource($hData)
 If Not $pData Then Return SetError(@error + 40, @extended, 0)
 Return SetExtended($iSize, $pData)
 EndFunc
+#EndRegion Internal Functions
 Global Const $__IMAGELISTCONSTANT_IMAGE_BITMAP = 0
 Func _GUIImageList_Add($hWnd, $hImage, $hMask = 0)
 Local $aCall = DllCall("comctl32.dll", "int", "ImageList_Add", "handle", $hWnd, "handle", $hImage, "handle", $hMask)
@@ -21437,6 +21601,9 @@ EndFunc
 OnAutoItExitRegister(_GDIPlus_Shutdown)
 OnAutoItExitRegister(_Resource_DestroyAll)
 _GDIPlus_Startup()
+#Region ResourcesEx.au3 - Header
+#EndRegion ResourcesEx.au3 - Header
+#Region ResourcesEx.au3 - #VARIABLES#
 Global Enum  $RESOURCE_ERROR_NONE,  $RESOURCE_ERROR_FINDRESOURCE,  $RESOURCE_ERROR_INVALIDCONTROLID,  $RESOURCE_ERROR_INVALIDCLASS,  $RESOURCE_ERROR_INVALIDRESOURCENAME,  $RESOURCE_ERROR_INVALIDRESOURCETYPE,  $RESOURCE_ERROR_LOCKRESOURCE,  $RESOURCE_ERROR_LOADBITMAP,  $RESOURCE_ERROR_LOADCURSOR,  $RESOURCE_ERROR_LOADICON,  $RESOURCE_ERROR_LOADIMAGE,  $RESOURCE_ERROR_LOADLIBRARY,  $RESOURCE_ERROR_LOADSTRING,  $RESOURCE_ERROR_SETIMAGE
 Global Const  $RESOURCE_SS_ENHMETAFILE = 0xF
 Global Const  $RESOURCE_SS_REALSIZECONTROL = 0x40
@@ -21451,6 +21618,8 @@ Global Enum  $RESOURCE_STORAGE,  $RESOURCE_STORAGE_FIRSTINDEX
 Global Enum  $RESOURCE_STORAGE_ID,  $RESOURCE_STORAGE_INDEX,  $RESOURCE_STORAGE_RESETCOUNT,  $RESOURCE_STORAGE_UBOUND
 Global Enum  $RESOURCE_STORAGE_DLL,  $RESOURCE_STORAGE_CASTRESTYPE,  $RESOURCE_STORAGE_LENGTH,  $RESOURCE_STORAGE_PTR,  $RESOURCE_STORAGE_RESLANG,  $RESOURCE_STORAGE_RESNAMEORID,  $RESOURCE_STORAGE_RESTYPE,  $RESOURCE_STORAGE_MAX,  $RESOURCE_STORAGE_ADD,  $RESOURCE_STORAGE_DESTROY,  $RESOURCE_STORAGE_DESTROYALL,  $RESOURCE_STORAGE_GET
 Global Enum  $RESOURCE_WINGETPOS_XPOS,  $RESOURCE_WINGETPOS_YPOS,  $RESOURCE_WINGETPOS_WIDTH,  $RESOURCE_WINGETPOS_HEIGHT
+#EndRegion ResourcesEx.au3 - #VARIABLES#
+#Region ResourcesEx.au3 - #FUNCTION#
 Func _Resource_Destroy($sResNameOrID, $iResType = $RT_RCDATA, $iResLang = Default, $sDllOrExePath = Default)
 If $iResLang = Default Then $iResLang = $RESOURCE_LANG_DEFAULT
 If $iResType = Default Then $iResType = $RT_RCDATA
@@ -22083,6 +22252,7 @@ EndIf
 EndIf
 Return $bReturn
 EndFunc
+#EndRegion ResourcesEx.au3 - #FUNCTION#
 Global Const $FW_DONTCARE = 0
 Global Const $FW_THIN = 100
 Global Const $FW_EXTRALIGHT = 200
@@ -22655,6 +22825,7 @@ Global Const $FE_FONTSMOOTHINGORIENTATIONRGB = 0x0001
 Global Const $SPIF_UPDATEINIFILE = 0x0001
 Global Const $SPIF_SENDWININICHANGE = 0x0002
 Global Const $SPIF_SENDCHANGE = $SPIF_SENDWININICHANGE
+#Region DPI Constants
 Global Enum $DPI_AWARENESS_INVALID = -1, $DPI_AWARENESS_UNAWARE = 0, $DPI_AWARENESS_SYSTEM_AWARE = 1, $DPI_AWARENESS_PER_MONITOR_AWARE = 2
 Global Const $DPI_AWARENESS_CONTEXT_UNAWARE = $DPI_AWARENESS_UNAWARE - 1
 Global Const $DPI_AWARENESS_CONTEXT_SYSTEM_AWARE = $DPI_AWARENESS_UNAWARE - 2
@@ -22664,6 +22835,8 @@ Global Const $DPI_AWARENESS_CONTEXT_UNAWARE_GDISCALED = $DPI_AWARENESS_UNAWARE -
 Global Enum $MDT_EFFECTIVE_DPI = 0, $MDT_ANGULAR_DPI, $MDT_RAW_DPI
 Global Const $MDT_DEFAULT = $MDT_EFFECTIVE_DPI
 Global Const $WM_DPICHANGED = 0x02E0, $WM_DPICHANGED_BEFOREPARENT = 0x02E2, $WM_DPICHANGED_AFTERPARENT = 0x02E3, $WM_GETDPISCALEDSIZE = 0x02E4
+#EndRegion DPI Constants
+#Region WinAPI DPI
 Func _WinAPI_AdjustWindowRectExForDpi($dpi, $dwStyle, $dwExStyle, $bMenu = False)
 Local $tRECT = DllStructCreate($tagRECT)
 Local $aResult = DllCall("user32.dll", "bool", "AdjustWindowRectExForDpi", "struct*", $tRECT, "dword", $dwStyle, "bool", $bMenu, "dword", $dwExStyle, "int", $dpi)
@@ -22840,6 +23013,7 @@ If @error Or Not $iDPI Then Return SetError(6, 0, 0)
 EndIf
 Return $iDPI
 EndFunc
+#EndRegion WinAPI DPI
 Func _ArrayNaturalSort(ByRef $avArray, $iDescending = 0, $iStart = 0, $iEnd = 0, $iSubItem = 0)
 Return _ArrayCustomSort($avArray, "_NaturalCompare", $iDescending, $iStart, $iEnd, $iSubItem)
 EndFunc
@@ -23096,7 +23270,7 @@ Opt("TrayAutoPause", 0)
 Opt("TrayIconHide", 1)
 Opt("GUIOnEventMode",1)
 Global Const $sAlias="ctOverlay"
-Global Const $VERSION = "1.1.0.1010"
+Global Const $VERSION = "1.1.0.1017"
 Global $sTitle=$sAlias&" v"&$VERSION
 Global Const $MA_NOACTIVATE = 3
 Global Const $MA_NOACTIVATEANDEAT = 4
@@ -23107,8 +23281,8 @@ Global $gDll_hShCore = DllOpen("Shcore.dll")
 Global $g_sDataDir=@LocalAppDataDir&"\InfinitySys\ctOverlay"
 Global $gsConfig=$g_sDataDir&"\ctOverlay.ini"
 If StringInStr($CmdLineRaw,"~!Install") Or Not FileExists($gsConfig) Then
+If Not FileExists($gsConfig) Then FileClose(FileOpen($gsConfig,10))
 ctInstall()
-If Not FileExists($gsConfig) Then FileClose(FileOpen($gsConfig,2))
 Exit 0
 EndIf
 Global $gMacroMgr_sTitle="Macro Manager"
@@ -23116,14 +23290,15 @@ Global $gMacroMgr_hWnd
 Global $gMacroMgr_iGuiW=512+32+5
 Global $gMacroMgr_iGuiH=331
 Global $gMacroMgr_iPaneAW=128+32
-Global $gMacroMgr_iBtnH=23
-Global $gMacroMgr_iBtnT=$gMacroMgr_iGuiH-28
-Global $gMacroMgr_iBtnW=($gMacroMgr_iPaneAW/4)-1
+Global $gMacroMgr_iBtnH=25
+Global $gMacroMgr_iBtnT=$gMacroMgr_iGuiH-46
+Global $gMacroMgr_iBtnW=($gMacroMgr_iPaneAW/3)-1
 Global $gMacroMgr_sPath=""
 Global $gMacroMgr_iSel=-1
 Global $gMacroMgr_idTreeRoot=-1
 Global $gMacroMgr_iGuiState
 Global $gMacroMgr_aTreeMap[1][6]
+Global $gMacroMgr_bMkUState
 Global $aMacros[1][3]
 $aMacros[0][0]=0
 _LoadMacros()
@@ -23686,8 +23861,16 @@ If @error Then Return False
 Local $iIdx=_ctxGetItemIdxById($aCtxMenu[$iMenuIdx][2],@GUI_CtrlId)
 If @error Then Return False
 Local $sMacro=_ProcMacro($aMacros[$iIdx][2])
+Switch $aMacros[$iIdx][3]
+Case 0
 If Not waitForIt() Then Return
 Send($sMacro,0)
+Case 1
+ClipPut($sMacro)
+Case 2
+Local $sClip=StringStripWS(ClipGet(),3)
+__ClipPutHyperlink($sMacro,$sClip)
+EndSwitch
 EndFunc
 Func _ctxGetCtxMenuIdx(ByRef $aMenu,$sAlias)
 For $i=1 To $aMenu[0][0]
@@ -23701,6 +23884,7 @@ If $aMenu[$i][3]=$idCtrl Then Return SetError(0,0,$i)
 Next
 Return SetError(1,0,0)
 EndFunc
+#Region
 Func _gfxRecalc()
 $iMargin=2*$iDpi
 $iSizeIco=16*$iDpi
@@ -23926,8 +24110,10 @@ ConsoleWrite($idCtrl&@CRLF)
 GUICtrlDelete($idCtrl)
 Next
 EndFunc
+#EndRegion OverlayUI
+#Region
 Func _ctxReloadFull()
-Dim $aMacros[1][3]
+Dim $aMacros[1][4]
 $aMacros[0][0]=0
 _LoadMacros()
 _ctxReload()
@@ -23935,7 +24121,7 @@ EndFunc
 Func _MacroMgr_Main_Init()
 Global $gMacroMgr_hWnd=GUICreate($gMacroMgr_sTitle,$gMacroMgr_iGuiW,$gMacroMgr_iGuiH,-1,-1,-1)
 GUISetFont(8.5,400,0,"Consolas",$gMacroMgr_hWnd)
-Global $gMacroMgr_idTree=GUICtrlCreateTreeView($iMargin-2,$iMargin,$gMacroMgr_iPaneAW,$gMacroMgr_iGuiH-$gMacroMgr_iBtnH-($iMargin*3),BitOR($TVS_HASBUTTONS, $TVS_HASLINES, $TVS_SHOWSELALWAYS),$WS_EX_CLIENTEDGE)
+Global $gMacroMgr_idTree=GUICtrlCreateTreeView($iMargin-2,$iMargin,$gMacroMgr_iPaneAW,$gMacroMgr_iGuiH-($gMacroMgr_iBtnH*2)-($iMargin*3),BitOR($TVS_HASBUTTONS, $TVS_HASLINES, $TVS_SHOWSELALWAYS),$WS_EX_CLIENTEDGE)
 Global $gMacroMgr_hTree=GUICtrlGetHandle($gMacroMgr_idTree)
 Global $gMacroMgr_idTreeRoot=-1
 Global $gMacroMgr_idTreeAdd=GUICtrlCreateButton("Add",$iMargin,$gMacroMgr_iBtnT,$gMacroMgr_iBtnW,$gMacroMgr_iBtnH)
@@ -23943,17 +24129,23 @@ Global $gMacroMgr_idTreeRm=GUICtrlCreateButton("Del",$iMargin+$gMacroMgr_iBtnW,$
 Global $gMacroMgr_idLabel=GUICtrlCreateInput("Macro Label",$gMacroMgr_iPaneAW+$iMargin,$iMargin-1,$gMacroMgr_iGuiW-$gMacroMgr_iPaneAW-$iMargin-2,21,$WS_CHILD+$WS_BORDER,$WS_EX_CLIENTEDGE)
 Global $gMacroMgr_hLabel=GUICtrlGetHandle($gMacroMgr_idLabel)
 _GUICtrlEdit_SetCueBanner($gMacroMgr_hLabel,"Macro Label",1)
-Global $gMacroMgr_idEdit=GUICtrlCreateEdit("Macro Definition",$gMacroMgr_iPaneAW+$iMargin,$iMargin-1+21+$iMargin,$gMacroMgr_iGuiW-$gMacroMgr_iPaneAW-$iMargin-2,$gMacroMgr_iGuiH-$gMacroMgr_iBtnH-($iMargin*3)-24,$WS_CHILD+$WS_BORDER,$WS_EX_CLIENTEDGE)
+Global $gMacroMgr_idEdit=GUICtrlCreateEdit("Macro Definition",$gMacroMgr_iPaneAW+$iMargin,$iMargin-1+21+$iMargin,$gMacroMgr_iGuiW-$gMacroMgr_iPaneAW-$iMargin-2,$gMacroMgr_iGuiH-($gMacroMgr_iBtnH*2)-($iMargin*3)-24,$WS_CHILD+$WS_BORDER,$WS_EX_CLIENTEDGE)
 Global $gMacroMgr_hEdit=GUICtrlGetHandle($gMacroMgr_idEdit)
 Global $gMacroMgr_idDiscard=GUICtrlCreateButton("Discard", $gMacroMgr_iPaneAW+$iMargin*2, $gMacroMgr_iBtnT, 52, $gMacroMgr_iBtnH)
 Global $gMacroMgr_idSave=GUICtrlCreateButton("Save", $gMacroMgr_iPaneAW+($iMargin*2)+52, $gMacroMgr_iBtnT, 52, $gMacroMgr_iBtnH)
 Global $gMacroMgr_idTest=GUICtrlCreateButton("Test", $gMacroMgr_iPaneAW+($iMargin*2)+104, $gMacroMgr_iBtnT, 52, $gMacroMgr_iBtnH)
+GUICtrlCreateLabel("Type:",$gMacroMgr_iPaneAW+($iMargin*2)+160,$gMacroMgr_iBtnT+4,28)
+Global $gMacroMgr_idTypeRadSend=GUICtrlCreateRadio("Send Keys",$gMacroMgr_iPaneAW+($iMargin*2)+196,$gMacroMgr_iBtnT,72,$gMacroMgr_iBtnH)
+Global $gMacroMgr_idTypeRadClip=GUICtrlCreateRadio("To Clipboard",$gMacroMgr_iPaneAW+($iMargin*2)+196+72+4,$gMacroMgr_iBtnT,96,$gMacroMgr_iBtnH)
+Global $gMacroMgr_idTypeRadMkU=GUICtrlCreateCheckbox("mkUrl",$gMacroMgr_iPaneAW+($iMargin*2)+196+72+4,$gMacroMgr_iBtnT+$gMacroMgr_iBtnH-4)
 GUISetOnEvent($GUI_EVENT_CLOSE,"_MacroMgr_Main_Close",$gMacroMgr_hWnd)
 GUICtrlSetOnEvent($gMacroMgr_idTreeAdd,"_MacroMgr_Main_Add")
 GUICtrlSetOnEvent($gMacroMgr_idTreeRm,"_MacroMgr_Main_Del")
 GUICtrlSetOnEvent($gMacroMgr_idDiscard,"_MacroMgr_Main_Discard")
 GUICtrlSetOnEvent($gMacroMgr_idSave,"_MacroMgr_Main_Save")
 GUICtrlSetOnEvent($gMacroMgr_idTest,"_MacroMgr_Main_Test")
+GUICtrlSetOnEvent($gMacroMgr_idTypeRadSend,"_MacroMgr_Main_DoType")
+GUICtrlSetOnEvent($gMacroMgr_idTypeRadClip,"_MacroMgr_Main_DoType")
 If $aMacros[0][0]=0 Then
 _MacroMgr_Main_GuiState(0)
 Else
@@ -23964,12 +24156,20 @@ GUIRegisterMsg($WM_NOTIFY, "_MacroMgr_Main_WM_NOTIFY")
 GUIRegisterMsg($WM_COMMAND, "_MacroMgr_Main_WM_COMMAND")
 GUISetState(@SW_SHOW,$gMacroMgr_hWnd)
 EndFunc
+Func _MacroMgr_Main_DoType()
+If _chkGetChecked($gMacroMgr_idTypeRadSend) Then
+GUICtrlSetState($gMacroMgr_idTypeRadMkU,$GUI_DISABLE)
+ElseIf _chkGetChecked($gMacroMgr_idTypeRadClip) Then
+GUICtrlSetState($gMacroMgr_idTypeRadMkU,$GUI_ENABLE)
+EndIf
+EndFunc
 Func _MacroMgr_Main_WM_COMMAND($hWnd, $iMsg, $wParam, $lParam)
 If $hWnd<>$gMacroMgr_hWnd Then Return $GUI_RUNDEFMSG
 Switch BitAND($wParam, 0xFFFF)
 Case $gMacroMgr_idLabel
 Switch BitShift($wParam, 16)
 Case $EN_CHANGE
+If $gMacroMgr_iSel>UBound($aMacros,1)-1 Then Return $GUI_RUNDEFMSG
 If GUICtrlRead($gMacroMgr_idLabel)=$aMacros[$gMacroMgr_iSel][1] Then
 _MacroMgr_Main_GuiCtrlNotState(16+32)
 Else
@@ -24012,6 +24212,20 @@ $iIdx=$gMacroMgr_aTreeMap[$i][5]
 $gMacroMgr_iSel=$iIdx
 GUICtrlSetData($gMacroMgr_idLabel,$aMacros[$iIdx][1])
 GUICtrlSetData($gMacroMgr_idEdit,$aMacros[$iIdx][2])
+Switch $aMacros[$iIdx][3]
+Case 0
+GUICtrlSetState($gMacroMgr_idTypeRadSend,$GUI_CHECKED)
+GUICtrlSetState($gMacroMgr_idTypeRadClip,$GUI_UNCHECKED)
+GUICtrlSetState($gMacroMgr_idTypeRadMkU,$GUI_DISABLE+$GUI_UNCHECKED)
+Case 1
+GUICtrlSetState($gMacroMgr_idTypeRadSend,$GUI_UNCHECKED)
+GUICtrlSetState($gMacroMgr_idTypeRadClip,$GUI_CHECKED)
+GUICtrlSetState($gMacroMgr_idTypeRadMkU,$GUI_ENABLE+$GUI_UNCHECKED)
+Case 2
+GUICtrlSetState($gMacroMgr_idTypeRadSend,$GUI_UNCHECKED)
+GUICtrlSetState($gMacroMgr_idTypeRadClip,$GUI_CHECKED)
+GUICtrlSetState($gMacroMgr_idTypeRadMkU,$GUI_ENABLE+$GUI_CHECKED)
+EndSwitch
 _MacroMgr_Main_GuiState(2)
 Next
 EndSwitch
@@ -24026,6 +24240,8 @@ GUICtrlSetOnEvent($gMacroMgr_idTreeRm,"")
 GUICtrlSetOnEvent($gMacroMgr_idDiscard,"")
 GUICtrlSetOnEvent($gMacroMgr_idSave,"")
 GUICtrlSetOnEvent($gMacroMgr_idTest,"")
+GUICtrlSetOnEvent($gMacroMgr_idTypeRadClip,"")
+GUICtrlSetOnEvent($gMacroMgr_idTypeRadSend,"")
 GUIRegisterMsg($WM_NOTIFY, "")
 GUIRegisterMsg($WM_COMMAND, "")
 GUIDelete($gMacroMgr_hWnd)
@@ -24116,7 +24332,10 @@ GUIRegisterMsg($WM_NOTIFY, "_MacroMgr_Main_WM_NOTIFY")
 GUIRegisterMsg($WM_COMMAND, "_MacroMgr_Main_WM_COMMAND")
 GUICtrlSetData($gMacroMgr_idLabel,"")
 GUICtrlSetData($gMacroMgr_idEdit,"")
-_MacroMgr_Main_GuiState(1)
+GUICtrlSetState($gMacroMgr_idTypeRadSend,$GUI_CHECKED)
+GUICtrlSetState($gMacroMgr_idTypeRadClip,$GUI_UNCHECKED)
+GUICtrlSetState($gMacroMgr_idTypeRadMkU,$GUI_UNCHECKED)
+_MacroMgr_Main_GuiState($aMacros[0][0]>0)
 EndFunc
 Func _MacroMgr_Main_Discard()
 If Not _MacroMgr_Main_ModPrompt("disc") Then Return
@@ -24127,15 +24346,45 @@ Func _MacroMgr_Main_Save()
 If Not _MacroMgr_Main_ModPrompt("sav") Then Return
 $aMacros[$gMacroMgr_iSel][1]=GUICtrlRead($gMacroMgr_idLabel)
 $aMacros[$gMacroMgr_iSel][2]=GUICtrlRead($gMacroMgr_idEdit)
+Local $iType=0
+If _chkGetChecked($gMacroMgr_idTypeRadSend) Then
+$iType=0
+ElseIf _chkGetChecked($gMacroMgr_idTypeRadClip) Then
+If _chkGetChecked($gMacroMgr_idTypeRadMkU) Then
+$iType=2
+Else
+$iType=1
+EndIf
+EndIf
+$aMacros[$gMacroMgr_iSel][3]=$iType
 _MacroMgr_Main_MacroLoad()
 _SaveMacros()
 _reloadMacroCtx()
 EndFunc
 Func _MacroMgr_Main_Test()
 Local $sMacro=GUICtrlRead($gMacroMgr_idEdit)
+Local $iType=0
+If _chkGetChecked($gMacroMgr_idTypeRadSend) Then
+$iType=0
+ElseIf _chkGetChecked($gMacroMgr_idTypeRadClip) Then
+If _chkGetChecked($gMacroMgr_idTypeRadMkU) Then
+$iType=2
+Else
+$iType=1
+EndIf
+EndIf
+$sMacro=_ProcMacro($sMacro)
+ConsoleWrite(StringFormat(":%s:%s",$sMacro,$iType)&@CRLF)
+Switch $iType
+Case 0
 If Not waitForIt() Then Return
-ConsoleWrite(StringFormat(":%s:",$sMacro)&@CRLF)
-Send(_ProcMacro($sMacro),0)
+Send($sMacro,0)
+Case 1
+ClipPut($sMacro)
+Case 2
+Local $sClip=StringStripWS(ClipGet(),3)
+__ClipPutHyperlink($sMacro,$sClip)
+EndSwitch
 EndFunc
 Func _MacroMgr_Main_ModPrompt($sOp)
 Switch $sOp
@@ -24151,17 +24400,29 @@ EndFunc
 Func _MacroMgr_Add_Add()
 Local $hSel=_GUICtrlTreeView_GetSelection($gMacroMgr_hTree)
 Local $sLabel=GUICtrlRead($gMacroMgr_idAddLabel)
+Local $iType=0
+If _chkGetChecked($gMacroMgr_idTypeRadSend) Then
+$iType=0
+ElseIf _chkGetChecked($gMacroMgr_idTypeRadClip) Then
+If _chkGetChecked($gMacroMgr_idTypeRadMkU) Then
+$iType=2
+Else
+$iType=1
+EndIf
+EndIf
 For $i=1 To $aMacros[0][0]
 If StringLower($aMacros[$i][0])=StringLower($gMacroMgr_sPath) And $aMacros[$i][1]=$sLabel Then
 MsgBox(16,$gMacroMgr_sTitle,"A Macro with this name already exists.",0,$gMacroMgr_hWnd)
 Return
 EndIf
 Next
-_MacroAdd($sLabel,"",$gMacroMgr_sPath)
+_MacroAdd($sLabel,"",$gMacroMgr_sPath,$iType)
 _MacroMgr_Add_Close()
 _MacroMgr_Main_MacroLoad()
+_SaveMacros()
 _GUICtrlTreeView_SetSelected($gMacroMgr_hTree,$hSel,1)
 _reloadMacroCtx()
+_MacroMgr_Main_GuiState(1)
 EndFunc
 Func _MacroMgr_Main_GuiState($iState)
 Local $xState=0x0
@@ -24178,9 +24439,14 @@ $gMacroMgr_idTreeRoot=-1
 EndIf
 $xState=1
 Case 2
-$xState=1+2+4+8+64
+$xState=1+2+4+8+64+128
 EndSwitch
 _MacroMgr_Main_GuiCtrlState($xState)
+EndFunc
+Func _chkGetChecked($vCtrl)
+If Not IsHWnd($vCtrl) Then $vCtrl=GUICtrlGetHandle($vCtrl)
+If _SendMessage($vCtrl,$BM_GETCHECK)=$BST_CHECKED Then Return True
+Return False
 EndFunc
 Func _MacroMgr_Main_GuiCtrlNotState($xState)
 _MacroMgr_Main_GuiCtrlState(BitAND($gMacroMgr_iGuiState,BitNOT($xState)))
@@ -24193,10 +24459,14 @@ GUICtrlSetState($gMacroMgr_idEdit,BitAND($xState,8)?$GUI_ENABLE:$GUI_DISABLE)
 GUICtrlSetState($gMacroMgr_idDiscard,BitAND($xState,16)?$GUI_ENABLE:$GUI_DISABLE)
 GUICtrlSetState($gMacroMgr_idSave,BitAND($xState,32)?$GUI_ENABLE:$GUI_DISABLE)
 GUICtrlSetState($gMacroMgr_idTest,BitAND($xState,64)?$GUI_ENABLE:$GUI_DISABLE)
+GUICtrlSetState($gMacroMgr_idTypeRadSend,BitAND($xState,128)?$GUI_ENABLE:$GUI_DISABLE)
+GUICtrlSetState($gMacroMgr_idTypeRadClip,BitAND($xState,128)?$GUI_ENABLE:$GUI_DISABLE)
+GUICtrlSetState($gMacroMgr_idTypeRadMkU,BitAND($xState,128)?$GUI_ENABLE:$GUI_DISABLE)
 $gMacroMgr_iGuiState=$xState
 EndFunc
+#EndRegion
 Func _LoadMacros()
-Local $aMacroDat=IniReadSection($gsConfig,"Macros")
+Local $sPath,$sMacro,$iType=0,$aMacroDat=IniReadSection($gsConfig,"Macros")
 If @error Then Return
 For $i=1 To $aMacroDat[0][0]
 If Not StringInStr($aMacroDat[$i][1],'|') Then ContinueLoop
@@ -24205,23 +24475,28 @@ Local $sPath=$aTmp[1]
 If $sPath<>'' Then $sPath=BinaryToString(_Base64Decode($sPath))
 Local $sMacro=$aTmp[2]
 If $sMacro<>'' Then $sMacro=BinaryToString(_Base64Decode($sMacro))
-_MacroAdd($aMacroDat[$i][0],$sMacro,$sPath)
+If $aTmp[0]>2 Then
+$iType=$aTmp[3]
+EndIf
+_MacroAdd($aMacroDat[$i][0],$sMacro,$sPath,$iType)
 Next
 EndFunc
 Func _SaveMacros()
 IniDelete($gsConfig,"Macros")
 For $i=1 To $aMacros[0][0]
-IniWrite($gsConfig,"Macros",$aMacros[$i][1],StringFormat("%s|%s",_Base64Encode($aMacros[$i][0]),_Base64Encode($aMacros[$i][2])))
+IniWrite($gsConfig,"Macros",$aMacros[$i][1],StringFormat("%s|%s|%s",_Base64Encode($aMacros[$i][0]),_Base64Encode($aMacros[$i][2]),$aMacros[$i][3]))
 Next
 EndFunc
-Func _MacroAdd($sLabel,$sMacro="",$sPath="")
+Func _MacroAdd($sLabel,$sMacro="",$sPath="",$iType=0)
 Local $iMax=UBound($aMacros,1)
-ReDim $aMacros[$iMax+1][3]
+ReDim $aMacros[$iMax+1][4]
 $aMacros[$iMax][0]=$sPath
 $aMacros[$iMax][1]=$sLabel
 $aMacros[$iMax][2]=$sMacro
+$aMacros[$iMax][3]=$iType
 $aMacros[0][0]=$iMax
 EndFunc
+#Region
 Func __WinAPI_EnumDisplayMonitors($hDC = 0, $tRECT = 0)
 Local $hEnumProc = DllCallbackRegister('__EnumDisplayMonitorsProc', 'bool', 'handle;handle;ptr;lparam')
 Dim $__g_vEnum[101][2] = [[0]]
@@ -24270,6 +24545,7 @@ Local $aCall = DllCall($gDll_hKernel32, 'bool', 'IsBadWritePtr', 'struct*', $pAd
 If @error Then Return SetError(@error, @extended, False)
 Return $aCall[0]
 EndFunc
+#EndRegion
 Func _genRand($iLen=16)
 Local $sRet,$aTmp[3]
 For $i=1 To $iLen
@@ -24287,7 +24563,7 @@ If MsgBox(32+4,$sTitle,"Would you like to run at startup?")==6 Then $bStartup=1
 If MsgBox(32+4,$sTitle,"Would you like to add to the desktop shortcut?")==6 Then $bDesktop=1
 If MsgBox(32+4,$sTitle,"Would you like to add to the Start Menu?")==6 Then $bStartMenu=1
 If $bStartup Or $bDesktop Or $bStartMenu Then
-FileCopy(@AutoItExe,$g_sDataDir&"\ctOverlay.exe",1)
+FileCopy(@AutoItExe,$g_sDataDir&"\ctOverlay.exe",9)
 EndIf
 If $bStartup Then
 RegWrite("HKCU\Software\Microsoft\Windows\CurrentVersion\Run","ctOverlay","REG_SZ",$g_sDataDir&"\ctOverlay.exe")
