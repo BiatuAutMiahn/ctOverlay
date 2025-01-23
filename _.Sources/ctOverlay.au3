@@ -5,7 +5,7 @@
 #AutoIt3Wrapper_UseUpx=n
 #AutoIt3Wrapper_Res_Description=Corsica Overlay
 #AutoIt3Wrapper_Res_ProductName=
-#AutoIt3Wrapper_Res_Fileversion=1.1.0.1008
+#AutoIt3Wrapper_Res_Fileversion=1.1.0.1010
 #AutoIt3Wrapper_Res_Fileversion_AutoIncrement=y
 #AutoIt3Wrapper_Res_Fileversion_First_Increment=y
 #AutoIt3Wrapper_Run_After=echo %fileversion%>..\VERSION.rc
@@ -55,7 +55,7 @@ Opt("TrayIconHide", 1)
 Opt("GUIOnEventMode",1)
 
 Global Const $sAlias="ctOverlay"
-Global Const $VERSION = "1.1.0.1008"
+Global Const $VERSION = "1.1.0.1010"
 Global $sTitle=$sAlias&" v"&$VERSION
 
 
@@ -319,6 +319,13 @@ Func _ctxClipTikClip()
     ;$sHtml="<p class=MsoNormal style='margin-bottom:0in;line-height:normal;mso-pagination:none;mso-layout-grid-align:none;text-autospace:none'><span style='font-family:'Consolas',serif;mso-font-kerning:0pt'><a href='"&$sClip&"'><span\r\nstyle=\'font-family:Consolas;mso-bidi-font-family:Consolas;color:windowtext\'>#"&$sClip&"</span></a></span><o:p></o:p></p>"
 EndFunc
 
+Func _ctxClip2Url()
+    Local $sClip=StringStripWS(ClipGet(),3)
+    $sUrI=_ProcMacro(InputBox($sTitle,"Enter Url Macro",$sClip))
+    __ClipPutHyperlink($sUrI,$sClip)
+    ;EndIf
+    ;$sHtml="<p class=MsoNormal style='margin-bottom:0in;line-height:normal;mso-pagination:none;mso-layout-grid-align:none;text-autospace:none'><span style='font-family:'Consolas',serif;mso-font-kerning:0pt'><a href='"&$sClip&"'><span\r\nstyle=\'font-family:Consolas;mso-bidi-font-family:Consolas;color:windowtext\'>#"&$sClip&"</span></a></span><o:p></o:p></p>"
+EndFunc
 
 Func _ctxGetPinParIdx()
     For $i=0 To UBound($aPins,1)-1
@@ -1026,7 +1033,8 @@ Func _InitDefMenu()
     Local $aCtxClip[1][5]
     _MenuAdd($aCtxClip,2,'Send',$aCtxClipSend)
     _MenuAdd($aCtxClip,2,'AsTicket',$aCtxClipTik)
-    ;_MenuAdd($aCtxClip,0)
+    _MenuAdd($aCtxClip,0)
+    _MenuAdd($aCtxClip,1,'mkUrl','_ctxClip2Url')
     ;_MenuAdd($aCtxClip,1,'Call {~!@Clip.RegExpRepl("^(\+\d{1,2}\s?)?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}$","$1.$2.$3")}','_ctxClipCall')
 
     _MenuAdd($aCtxMenu,2,'Clip',$aCtxClip)

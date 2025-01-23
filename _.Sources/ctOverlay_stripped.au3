@@ -4,7 +4,7 @@
 #AutoIt3Wrapper_UseUpx=n
 #AutoIt3Wrapper_Res_Description=Corsica Overlay
 #AutoIt3Wrapper_Res_ProductName=
-#AutoIt3Wrapper_Res_Fileversion=1.1.0.1001
+#AutoIt3Wrapper_Res_Fileversion=1.1.0.1010
 #AutoIt3Wrapper_Res_Fileversion_AutoIncrement=y
 #AutoIt3Wrapper_Res_Fileversion_First_Increment=y
 #AutoIt3Wrapper_Run_After=echo %fileversion%>..\VERSION.rc
@@ -23096,7 +23096,7 @@ Opt("TrayAutoPause", 0)
 Opt("TrayIconHide", 1)
 Opt("GUIOnEventMode",1)
 Global Const $sAlias="ctOverlay"
-Global Const $VERSION = "1.1.0.1001"
+Global Const $VERSION = "1.1.0.1010"
 Global $sTitle=$sAlias&" v"&$VERSION
 Global Const $MA_NOACTIVATE = 3
 Global Const $MA_NOACTIVATEANDEAT = 4
@@ -23106,7 +23106,13 @@ Global $gDll_hUser32=DllOpen("User32.dll")
 Global $gDll_hShCore = DllOpen("Shcore.dll")
 Global $g_sDataDir=@LocalAppDataDir&"\InfinitySys\ctOverlay"
 Global $gsConfig=$g_sDataDir&"\ctOverlay.ini"
+If StringInStr($CmdLineRaw,"~!Install") Or Not FileExists($gsConfig) Then
+ctInstall()
+If Not FileExists($gsConfig) Then FileClose(FileOpen($gsConfig,2))
+Exit 0
+EndIf
 Global $gMacroMgr_sTitle="Macro Manager"
+Global $gMacroMgr_hWnd
 Global $gMacroMgr_iGuiW=512+32+5
 Global $gMacroMgr_iGuiH=331
 Global $gMacroMgr_iPaneAW=128+32
@@ -23145,6 +23151,8 @@ Local $iSizeIco, $iMargin, $iWidth, $iHeight, $iRight, $iTop
 _gfxRecalc()
 Global $hGUI
 $iLeft=@DesktopWidth-$iRight
+Global $bNoActivate=False
+Global $hLastActive
 initUI()
 While Sleep(125)
 WEnd
@@ -23194,6 +23202,12 @@ $iRound=StringRegExp($sString,"\{@TIME\}",1)
 If $iHour=0 Then $iHour=12
 $sTime=$iHour&$iMin&$sMeridiem
 $sString=StringReplace($sString,"{@TIME}",$sTime)
+EndIf
+If StringRegExp($sString,"\{@RAND(?:\:(\d{1,}))?\}") Then
+Local $aMatch=StringRegExp($sString,"\{@RAND(?:\:(\d{1,}))?\}",2)
+Local $iLen=16
+If UBound($aMatch)>1 Then $iLen=$aMatch[1]
+$sString=StringReplace($sString,$aMatch[0],_genRand($iLen))
 EndIf
 $sString=StringReplace($sString,"{@clip}",StringStripWS(ClipGet(),3))
 While StringRegExp($sString,"{~!([^}]+)}")
@@ -23293,6 +23307,11 @@ Local $sClip=StringStripWS(ClipGet(),3)
 If StringLeft($sClip,1)='#' Then $sClip=StringTrimLeft($sClip,1)
 $sUrI="https://na.myconnectwise.net/v4_6_release/services/system_io/Service/fv_sr100_request.rails?service_recid="&$sClip&"&companyName=corsica"
 __ClipPutHyperlink($sUrI,'#'&$sClip)
+EndFunc
+Func _ctxClip2Url()
+Local $sClip=StringStripWS(ClipGet(),3)
+$sUrI=_ProcMacro(InputBox($sTitle,"Enter Url Macro",$sClip))
+__ClipPutHyperlink($sUrI,$sClip)
 EndFunc
 Func _ctxGetPinParIdx()
 For $i=0 To UBound($aPins,1)-1
@@ -23571,6 +23590,7 @@ AdlibUnRegister("_ctxEvent")
 _destroyMenu($aCtxMenu, $gCtxMain)
 _InitMenu2($aCtxMenu, $gCtxMain)
 ShowMenu($hGui, $gCtxMain, ($iSizeIco/2)-$iMargin, $iMargin+($iSizeIco/2))
+_WinAPI_SetForegroundWindow($hLastActive)
 EndFunc
 Func _ctxEventMPos()
 _destroyMenu($aCtxMenu, $gCtxMain)
@@ -23761,6 +23781,8 @@ $ghCtxMain=GUICtrlGetHandle($gCtxMain)
 _GUICtrlMenu_SetMenuStyle($ghCtxMain,$MNS_NOCHECK+$MNS_AUTODISMISS)
 GUIRegisterMsg($WM_NCHITTEST, 'WM_NCHITTEST')
 GUIRegisterMsg($WM_SYSCOMMAND, "WM_SYSCOMMAND")
+GUIRegisterMsg($WM_MENUSELECT, "WM_EXITMENU")
+GUIRegisterMsg($WM_MENUCOMMAND, "WM_EXITMENU")
 GUIRegisterMsg($WM_MOUSEACTIVATE, 'WM_EVENTS')
 GUIRegisterMsg($WM_DISPLAYCHANGE, "onDisplayChange")
 AdlibRegister("_watchDisplay",250)
@@ -23768,8 +23790,26 @@ AdlibRegister('posTrackCall',64)
 GUISetState(@SW_SHOWNOACTIVATE, $hGUI)
 _WinAPI_UpdateLayeredWindowEx($hGUI, -1, -1, $hHBitmap,0xBB)
 EndFunc
-Func WM_EVENTS($hWnd,$MsgID,$WParam,$LParam)
-If $hWnd<>$hGui Or $MsgID<>$WM_MOUSEACTIVATE Then Return $GUI_RUNDEFMSG
+Func WM_EXITMENU($hwnd, $iMsg, $wParam, $lParam)
+#forceref $hwnd, $iMsg, $wParam, $lParam
+If $hWnd<>$hGui Then $GUI_RUNDEFMSG
+$bNoActivate=False
+_WinAPI_SetForegroundWindow($hLastActive)
+Return $GUI_RUNDEFMSG
+EndFunc
+Func WM_UNINITMENU($hwnd, $iMsg, $wParam, $lParam)
+#forceref $hwnd, $iMsg, $wParam, $lParam
+If $hWnd<>$hGui Then $GUI_RUNDEFMSG
+Return 0
+Return $GUI_RUNDEFMSG
+EndFunc
+Func WM_EVENTS($hWndGUI, $MsgID, $WParam, $LParam)
+Switch $hWndGUI
+Case $hGUI
+Switch $MsgID
+Case $WM_MOUSEACTIVATE
+$hLastActive=_WinAPI_GetForegroundWindow()
+$hCurrWnd = $hLastActive
 Local $aPos=GUIGetCursorInfo($hGui)
 If Pixel_Distance($aPos[0],$aPos[1],$iMargin+($iSizeIco/2),$iMargin+($iSizeIco/2))<=($iSizeIco/2) Then
 Local $iX=$iMargin+($iSizeIco/2)
@@ -23778,19 +23818,40 @@ GUISetState(@SW_SHOWNOACTIVATE, $hGUI)
 AdlibRegister("_ctxEvent")
 EndIf
 Return $MA_NOACTIVATEANDEAT
+EndSwitch
+EndSwitch
+Return $GUI_RUNDEFMSG
+EndFunc
+Func WM_MENUSELECT($hWnd, $iMsg, $iwParam, $ilParam)
+Local $Flags = BitShift($iwParam, 16)
+If BitAND($Flags, $MF_POPUP) Then
+Consolewrite("I have An Arrow :)" & @crlf)
+EndIf
+Return $GUI_RUNDEFMSG
 EndFunc
 Func WM_SYSCOMMAND($hWnd,$Msg,$wParam,$lParam)
-If $hWnd<>$hGui Then $GUI_RUNDEFMSG
+If $hWnd=$hGui Then
 If BitAND($wParam,0xFFF0)=0xF010 Then Return 0
+EndIf
 Return $GUI_RUNDEFMSG
 EndFunc
 Func WM_NCHITTEST($hWnd,$iMsg,$wParam,$lParam)
 #forceref $hWnd, $iMsg, $wParam, $lParam
+If $hWnd=$gMacroMgr_hWnd Then $GUI_RUNDEFMSG
+If $hWnd<>$hGui Then $GUI_RUNDEFMSG
 Return $HTCAPTION
 EndFunc
 Func WM_MOVING($hWnd,$iMsg,$wParam,$lParam)
+#forceref $hWnd, $iMsg, $wParam, $lParam
+If $hWnd=$gMacroMgr_hWnd Then $GUI_RUNDEFMSG
 If $hWnd=$hGui Then Return 1
 Return $GUI_RUNDEFMSG
+EndFunc
+Func WM_NOOP($hWnd,$iMsg,$wParam,$lParam)
+#forceref $hWnd, $iMsg, $wParam, $lParam
+If $hWnd=$gMacroMgr_hWnd Then $GUI_RUNDEFMSG
+If $hWnd<>$hGui Then $GUI_RUNDEFMSG
+Return 0
 EndFunc
 Func _MenuAdd(ByRef $aMenu,$iType,$sAlias=Null,$vActPar=Null)
 $iMax=UBound($aMenu,1)
@@ -23815,11 +23876,14 @@ _MenuAdd($aCtxClipTik,1,'mkUrl','_ctxClipTikClip')
 Local $aCtxClip[1][5]
 _MenuAdd($aCtxClip,2,'Send',$aCtxClipSend)
 _MenuAdd($aCtxClip,2,'AsTicket',$aCtxClipTik)
+_MenuAdd($aCtxClip,0)
+_MenuAdd($aCtxClip,1,'mkUrl','_ctxClip2Url')
 _MenuAdd($aCtxMenu,2,'Clip',$aCtxClip)
 _MenuAdd($aCtxMenu,0)
 _MenuAdd($aCtxMenu,2,'Macros',$aCtxMacros)
 _MenuAdd($aCtxMenu,0)
 _MenuAdd($aCtxMenu,1,'Dismiss','_ctxReload')
+_MenuAdd($aCtxMenu,1,'Reload','_ctxReloadFull')
 _MenuAdd($aCtxMenu,1,'Exit','_ctxExit')
 _reloadMacroCtx()
 EndFunc
@@ -23862,8 +23926,14 @@ ConsoleWrite($idCtrl&@CRLF)
 GUICtrlDelete($idCtrl)
 Next
 EndFunc
+Func _ctxReloadFull()
+Dim $aMacros[1][3]
+$aMacros[0][0]=0
+_LoadMacros()
+_ctxReload()
+EndFunc
 Func _MacroMgr_Main_Init()
-Global $gMacroMgr_hWnd=GUICreate($gMacroMgr_sTitle,$gMacroMgr_iGuiW,$gMacroMgr_iGuiH,-1,-1,-1,$WS_EX_TOOLWINDOW,$hGUI)
+Global $gMacroMgr_hWnd=GUICreate($gMacroMgr_sTitle,$gMacroMgr_iGuiW,$gMacroMgr_iGuiH,-1,-1,-1)
 GUISetFont(8.5,400,0,"Consolas",$gMacroMgr_hWnd)
 Global $gMacroMgr_idTree=GUICtrlCreateTreeView($iMargin-2,$iMargin,$gMacroMgr_iPaneAW,$gMacroMgr_iGuiH-$gMacroMgr_iBtnH-($iMargin*3),BitOR($TVS_HASBUTTONS, $TVS_HASLINES, $TVS_SHOWSELALWAYS),$WS_EX_CLIENTEDGE)
 Global $gMacroMgr_hTree=GUICtrlGetHandle($gMacroMgr_idTree)
@@ -24199,4 +24269,38 @@ Func __WinAPI_IsBadWritePtr($pAddress, $iLength)
 Local $aCall = DllCall($gDll_hKernel32, 'bool', 'IsBadWritePtr', 'struct*', $pAddress, 'uint_ptr', $iLength)
 If @error Then Return SetError(@error, @extended, False)
 Return $aCall[0]
+EndFunc
+Func _genRand($iLen=16)
+Local $sRet,$aTmp[3]
+For $i=1 To $iLen
+$aTmp[0]=Chr(Random(65,90,1))
+$aTmp[1]=Chr(Random(97,122,1))
+$aTmp[2]=Chr(Random(48,57,1))
+$sRet&=$aTmp[Random(0,2,1)]
+Next
+Return $sRet
+EndFunc
+Func ctInstall()
+If @Compiled Then
+Local $bStartup,$bDesktop,$bStartMenu
+If MsgBox(32+4,$sTitle,"Would you like to run at startup?")==6 Then $bStartup=1
+If MsgBox(32+4,$sTitle,"Would you like to add to the desktop shortcut?")==6 Then $bDesktop=1
+If MsgBox(32+4,$sTitle,"Would you like to add to the Start Menu?")==6 Then $bStartMenu=1
+If $bStartup Or $bDesktop Or $bStartMenu Then
+FileCopy(@AutoItExe,$g_sDataDir&"\ctOverlay.exe",1)
+EndIf
+If $bStartup Then
+RegWrite("HKCU\Software\Microsoft\Windows\CurrentVersion\Run","ctOverlay","REG_SZ",$g_sDataDir&"\ctOverlay.exe")
+EndIf
+If $bDesktop Then
+FileCreateShortcut($g_sDataDir&"\ctOverlay.exe",@DesktopDir&"\ctOverlay.lnk",$g_sDataDir)
+EndIf
+If $bStartMenu Then
+FileCreateShortcut($g_sDataDir&"\ctOverlay.exe",@ProgramsDir&"\ctOverlay.lnk",$g_sDataDir)
+EndIf
+If MsgBox(32+4,$sTitle,"Would you like to run now?")==6 Then
+Run($g_sDataDir&"\ctOverlay.exe",$g_sDataDir,@SW_SHOW)
+Exit 0
+EndIf
+EndIf
 EndFunc
