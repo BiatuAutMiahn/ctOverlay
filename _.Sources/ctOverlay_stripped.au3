@@ -4,7 +4,7 @@
 #AutoIt3Wrapper_UseUpx=n
 #AutoIt3Wrapper_Res_Description=Corsica Overlay
 #AutoIt3Wrapper_Res_ProductName=
-#AutoIt3Wrapper_Res_Fileversion=1.1.0.1018
+#AutoIt3Wrapper_Res_Fileversion=1.1.0.1019
 #AutoIt3Wrapper_Res_Fileversion_AutoIncrement=y
 #AutoIt3Wrapper_Res_Fileversion_First_Increment=y
 #AutoIt3Wrapper_Run_After=echo %fileversion%>..\VERSION.rc
@@ -23096,7 +23096,7 @@ Opt("TrayAutoPause", 0)
 Opt("TrayIconHide", 1)
 Opt("GUIOnEventMode",1)
 Global Const $sAlias="ctOverlay"
-Global Const $VERSION = "1.1.0.1018"
+Global Const $VERSION = "1.1.0.1019"
 Global $sTitle=$sAlias&" v"&$VERSION
 Global Const $MA_NOACTIVATE = 3
 Global Const $MA_NOACTIVATEANDEAT = 4
@@ -23952,7 +23952,7 @@ Global $gMacroMgr_idTreeRm=GUICtrlCreateButton("Del",$iMargin+$gMacroMgr_iBtnW,$
 Global $gMacroMgr_idLabel=GUICtrlCreateInput("Macro Label",$gMacroMgr_iPaneAW+$iMargin,$iMargin-1,$gMacroMgr_iGuiW-$gMacroMgr_iPaneAW-$iMargin-2,21,$WS_CHILD+$WS_BORDER,$WS_EX_CLIENTEDGE)
 Global $gMacroMgr_hLabel=GUICtrlGetHandle($gMacroMgr_idLabel)
 _GUICtrlEdit_SetCueBanner($gMacroMgr_hLabel,"Macro Label",1)
-Global $gMacroMgr_idEdit=GUICtrlCreateEdit("Macro Definition",$gMacroMgr_iPaneAW+$iMargin,$iMargin-1+21+$iMargin,$gMacroMgr_iGuiW-$gMacroMgr_iPaneAW-$iMargin-2,$gMacroMgr_iGuiH-($gMacroMgr_iBtnH*2)-($iMargin*3)-24,$WS_CHILD+$WS_BORDER,$WS_EX_CLIENTEDGE)
+Global $gMacroMgr_idEdit=GUICtrlCreateEdit("Macro Definition",$gMacroMgr_iPaneAW+$iMargin,$iMargin-1+21+$iMargin,$gMacroMgr_iGuiW-$gMacroMgr_iPaneAW-$iMargin-2,$gMacroMgr_iGuiH-($gMacroMgr_iBtnH*2)-($iMargin*3)-24,$WS_CHILD+$WS_BORDER+$ES_AUTOVSCROLL+$ES_AUTOHSCROLL,$WS_EX_CLIENTEDGE)
 Global $gMacroMgr_hEdit=GUICtrlGetHandle($gMacroMgr_idEdit)
 Global $gMacroMgr_idDiscard=GUICtrlCreateButton("Discard", $gMacroMgr_iPaneAW+$iMargin*2, $gMacroMgr_iBtnT, 52, $gMacroMgr_iBtnH)
 Global $gMacroMgr_idSave=GUICtrlCreateButton("Save", $gMacroMgr_iPaneAW+($iMargin*2)+52, $gMacroMgr_iBtnT, 52, $gMacroMgr_iBtnH)
