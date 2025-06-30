@@ -4,7 +4,7 @@
 #AutoIt3Wrapper_UseUpx=n
 #AutoIt3Wrapper_Res_Description=Corsica Overlay
 #AutoIt3Wrapper_Res_ProductName=
-#AutoIt3Wrapper_Res_Fileversion=1.1.0.1019
+#AutoIt3Wrapper_Res_Fileversion=1.1.0.1029
 #AutoIt3Wrapper_Res_Fileversion_AutoIncrement=y
 #AutoIt3Wrapper_Res_Fileversion_First_Increment=y
 #AutoIt3Wrapper_Run_After=echo %fileversion%>..\VERSION.rc
@@ -23096,7 +23096,7 @@ Opt("TrayAutoPause", 0)
 Opt("TrayIconHide", 1)
 Opt("GUIOnEventMode",1)
 Global Const $sAlias="ctOverlay"
-Global Const $VERSION = "1.1.0.1019"
+Global Const $VERSION = "1.1.0.1029"
 Global $sTitle=$sAlias&" v"&$VERSION
 Global Const $MA_NOACTIVATE = 3
 Global Const $MA_NOACTIVATEANDEAT = 4
@@ -23106,11 +23106,35 @@ Global $gDll_hUser32=DllOpen("User32.dll")
 Global $gDll_hShCore = DllOpen("Shcore.dll")
 Global $g_sDataDir=@LocalAppDataDir&"\InfinitySys\ctOverlay"
 Global $gsConfig=$g_sDataDir&"\ctOverlay.ini"
-If StringInStr($CmdLineRaw,"~!Install") Or Not FileExists($gsConfig) Then
-If Not FileExists($gsConfig) Then FileClose(FileOpen($gsConfig,10))
+Global $sInstFullPath=StringFormat("%s\%s",$g_sDataDir,@ScriptName)
+Global $g_sLog=$g_sDataDir&"\cwOverlay.log"
+FileClose(FileOpen($g_sLog,2))
+Func _Log($sLine)
+If Not FileExists($g_sDataDir) Then DirCreate($g_sDataDir)
+If FileGetSize($g_sLog)>1024*1024 Then FileDelete($g_sLog)
+FileWriteLine($g_sLog,$sLine)
+ConsoleWrite($sLine&@CRLF)
+EndFunc
+If StringInStr($CmdLineRaw,"~!Install") Then
 ctInstall()
 Exit 0
+ElseIf StringInStr($CmdLineRaw,"~!Version") Then
+ConsoleWrite($VERSION&@CRLF)
+Exit 0
 EndIf
+If @Compiled Then
+If FileExists($sInstFullPath) Then
+If ctUpdate() Then Exit
+Else
+ctInstall()
+EndIf
+EndIf
+If Not StringInStr($CmdLineRaw,"~!PostInstall") And _Singleton("Infinity."&$sAlias,1)=0 Then
+MsgBox(32,$sTitle,"Another instance is already running.")
+_Log("_Singleton,Exit")
+Exit
+EndIf
+If Not FileExists($gsConfig) Then FileClose(FileOpen($gsConfig,10))
 Global $gMacroMgr_sTitle="Macro Manager"
 Global $gMacroMgr_hWnd
 Global $gMacroMgr_iGuiW=512+32+5
@@ -23138,8 +23162,6 @@ Global $aPins[0][2]
 Global $aMenu[0]
 Local $iLeftLast,$iTopLast
 Global $hSelfLib, $hGraphics, $hBitmap, $hContext, $hHBitmap, $hBrushBl, $hBrushGr, $hBrushRd, $hBrushBk, $hIcon, $hHBitmap
-Global $g_sLog=$g_sDataDir&"\cwOverlay.log"
-FileClose(FileOpen($g_sLog,2))
 _WinAPI_SetProcessDpiAwarenessContext($DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2)
 Global $iDpiLast,$iDpiScale=1.5
 Global $aMonitors=_GetMonInfo()
@@ -23160,12 +23182,6 @@ WEnd
 _gfxDispose()
 _GDIPlus_Shutdown()
 GUIDelete($hGUI)
-Func _Log($sLine)
-If Not FileExists($g_sDataDir) Then DirCreate($g_sDataDir)
-If FileGetSize($g_sLog)>1024*1024 Then FileDelete($g_sLog)
-FileWriteLine($g_sLog,$sLine)
-ConsoleWrite($sLine&@CRLF)
-EndFunc
 Func _ctxMacroAdSync()
 If Not waitForIt() Then Return
 Send('powershell -ExecutionPolicy Bypass -Command "iex (iwr -useb '&"'https://automation.corsicatech.com/wl/?id=MBF8RIaworixEqFqA4qCJSb4h7AoBNKe'"&')"{enter}',0)
@@ -23205,27 +23221,59 @@ $sTime=$iHour&$iMin&$sMeridiem
 $sString=StringReplace($sString,"{@TIME}",$sTime)
 EndIf
 If StringRegExp($sString,"\{@RAND(?:\:(\d{1,}))?\}") Then
-Local $aMatch=StringRegExp($sString,"\{@RAND(?:\:(\d{1,}))?\}",2)
-Local $iLen=16
-If UBound($aMatch)>1 Then $iLen=$aMatch[1]
-$sString=StringReplace($sString,$aMatch[0],_genRand($iLen))
+Local $aMatch=StringRegExp($sString,"\{@RAND(?:\:(\d{1,}))?\}",4)
+Local $iLen,$m
+For $i=0 To UBound($aMatch,1)-1
+$m=$aMatch[$i]
+$iLen=16
+If UBound($m)>1 Then $iLen=$m[1]
+$sString=StringReplace($sString,$m[0],_genRand($iLen),1)
+Next
 EndIf
 $sString=StringReplace($sString,"{@clip}",StringStripWS(ClipGet(),3))
-While StringRegExp($sString,"{~!([^}]+)}")
+While StringRegExp($sString,"{~!((?:[^}"&'"'&"']|"&'"[^"]*"|'&"'[^']*')+)}")
 Local $aRet[][2]=[[0,'']]
 Local $sRet
-$aCalcRegExp=StringRegExp($sString,"{~!([^}]+)}",2)
-If @error Then ExitLoop
+$aCalcRegExp=StringRegExp($sString,"{~!((?:[^}"&'"'&"']|"&'"[^"]*"|'&"'[^']*')+)}",2)
+If @error Then ContinueLoop
 $sMatch=$aCalcRegExp[0]
 $aCalc=StringSplit($aCalcRegExp[1],'.')
 Local $aOp,$sFunc,$aParam
 For $i=1 To $aCalc[0]
-$aOp=StringRegExp($aCalc[$i],"([A-Za-z0-9]+)(?:\(([^\)]+)\))?",1)
+$aOp=StringRegExp($aCalc[$i],"([A-Za-z0-9]+)(?:\(((?:[^)"&'"'&"']|"&'"[^"]*"|'&"'[^']*')*)\))?",3)
+If @error Then
+_Log("Invalid Func: '"&$aCalc[$i]&"'"&@CRLF)
+ContinueLoop
+EndIf
 $iOp=UBound($aOp,1)
 $sFunc=""
 If $iOp>0 Then $sFunc=$aOp[0]
 If $iOp>1 Then $aParam=StringSplit($aOp[1],',')
 Switch $sFunc
+Case "Clip"
+$sClip=ClipGet()
+_Log($sClip&@CRLF)
+_MacroInt($aRet,"Out",$sClip)
+Case "Replace"
+If $iOp<2 Then ContinueLoop
+If $aParam[0]>2 Then
+For $j=1 To $aParam[0]-1
+If $aParam[$j]='\' And $aParam[$j+1]='' Then
+$aParam[0]=','
+EndIf
+Next
+EndIf
+For $j=1 To $aParam[0]
+$aParam[$j]=StringReplace($aParam[$j],"@CRLF",@CRLF)
+$aParam[$j]=StringReplace($aParam[$j],"@LF",@LF)
+$aParam[$j]=StringReplace($aParam[$j],"@CR",@CR)
+If StringLen($aParam[$j])>1 Then
+If (StringLeft($aParam[$j],1)='"' And StringRight($aParam[$j],1)='"') Or (StringLeft($aParam[$j],1)="'" And StringRight($aParam[$j],1)="'") Then $aParam[$j]=StringTrimRight(StringTrimLeft($aParam[$j],1),1)
+EndIf
+Next
+$sOut=_MacroInt($aRet,"Out")
+$sOut=StringReplace($sOut,$aParam[1],$aParam[2])
+_MacroInt($aRet,"Out",$sOut)
 Case "Time"
 $iHour=@HOUR
 $sMeridiem='a'
@@ -23278,8 +23326,10 @@ $sString=StringReplace($sString,$sMatch,StringFormat("%d%s",_MacroInt($aRet,"iHo
 Else
 $sString=StringReplace($sString,$sMatch,StringFormat("%d%02d%s",_MacroInt($aRet,"iHour"),_MacroInt($aRet,"iMin"),_MacroInt($aRet,"sMeridiem")))
 EndIf
+_MacroInt($aRet,"Out",$sString)
 EndSwitch
 Next
+$sString=_MacroInt($aRet,"Out")
 WEnd
 For $i=1 To $gaAutMacros[0]
 If Not StringInStr($sString,"{@"&$gaAutMacros[$i]&"}") Then ContinueLoop
@@ -23297,17 +23347,26 @@ Send($sClip,1)
 EndFunc
 Func _ctxClipTikOpen()
 Local $sClip=StringStripWS(ClipGet(),3)
-If StringLeft($sClip,1)='#' Then $sClip=StringTrimLeft($sClip,1)
-ShellExecute(StringFormat("https://na.myconnectwise.net/v4_6_release/services/system_io/Service/fv_sr100_request.rails?service_recid=%s&companyName=corsica",$sClip))
+If StringRegExp($sClip,"\b#?(\d{7})\b") Then
+$aMatch=StringRegExp($sClip,"\b#?(\d{7})\b",3)
+If @error Then Return
+For $i=0 To UBound($aMatch,1)-1
+ShellExecute(StringFormat("https://na.myconnectwise.net/v4_6_release/services/system_io/Service/fv_sr100_request.rails?service_recid=%s&companyName=corsica",$aMatch[$i]))
+Next
+EndIf
 EndFunc
 Func _ctxClipCall()
 ShellExecute(StringFormat("tel:%s",$sClipAct))
 EndFunc
 Func _ctxClipTikClip()
 Local $sClip=StringStripWS(ClipGet(),3)
-If StringLeft($sClip,1)='#' Then $sClip=StringTrimLeft($sClip,1)
-$sUrI="https://na.myconnectwise.net/v4_6_release/services/system_io/Service/fv_sr100_request.rails?service_recid="&$sClip&"&companyName=corsica"
-__ClipPutHyperlink($sUrI,'#'&$sClip)
+If StringRegExp($sClip,"\b#?(\d{7})\b") Then
+$aMatch=StringRegExp($sClip,"^.*#?(\d{7}).*$",2)
+If @error Then Return
+If UBound($aMatch,1)<>2 Then Return
+$sUrI="https://na.myconnectwise.net/v4_6_release/services/system_io/Service/fv_sr100_request.rails?service_recid="&$aMatch[1]&"&companyName=corsica"
+__ClipPutHyperlink($sUrI,$aMatch[0])
+EndIf
 EndFunc
 Func _ctxClip2Url()
 Local $sClip=StringStripWS(ClipGet(),3)
@@ -23690,6 +23749,7 @@ Local $sMacro=_ProcMacro($aMacros[$iIdx][2])
 Switch $aMacros[$iIdx][3]
 Case 0
 If Not waitForIt() Then Return
+_Log("DoMacro:"&$sMacro&@CRLF)
 Send($sMacro,0)
 Case 1
 ClipPut($sMacro)
@@ -24395,8 +24455,41 @@ If $bStartMenu Then
 FileCreateShortcut($g_sDataDir&"\ctOverlay.exe",@ProgramsDir&"\ctOverlay.lnk",$g_sDataDir)
 EndIf
 If MsgBox(32+4,$sTitle,"Would you like to run now?")==6 Then
-Run($g_sDataDir&"\ctOverlay.exe",$g_sDataDir,@SW_SHOW)
+Run($sInstFullPath&" ~!PostInstall",$g_sDataDir,@SW_SHOW)
 Exit 0
 EndIf
+Exit 0
 EndIf
+EndFunc
+Func ctUpdate()
+$sOldVer=FileGetVersion($sInstFullPath,"FileVersion")
+$sCurVer=FileGetVersion(@AutoItExe,"FileVersion")
+If _VersionCompare($sOldVer,$sCurVer)<>-1 Then Return 0
+Local $bUpdate=0,$bRun=0
+If MsgBox(32+4,$sTitle,"This version is newer than the one that is current installed, would you like to update it?")==6 Then $bUpdate=1
+If Not $bUpdate Then
+If MsgBox(32+4,$sTitle,"Would you like to run the new version now?")==6 Then Return 0
+Return 1
+EndIf
+If $bUpdate Then
+Local $iPid=-1,$aProc=ProcessList(@ScriptName)
+For $i=1 To $aProc[0][0]
+_Log($aProc[$i][1]&","&@AutoItPID)
+If $aProc[$i][1]<>@AutoItPID Then
+$iPid=$aProc[$i][1]
+EndIf
+Next
+If $iPid<>-1 And ProcessExists($iPid) Then
+_Log("Killing pid: "&$iPid)
+ProcessClose($iPid)
+ProcessWaitClose($iPid)
+EndIf
+_Log(FileCopy(@AutoItExe,$sInstFullPath,1))
+EndIf
+Local $iRet=MsgBox(32+4,$sTitle,"Would you like to run the new version after the update?")
+If $iRet=6 Then $bRun=1
+If $bRun Then
+Run($sInstFullPath&" ~!PostInstall",$g_sDataDir,@SW_SHOW)
+EndIf
+Return 1
 EndFunc
